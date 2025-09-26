@@ -32,7 +32,7 @@ const CategorySelector: React.FC = () => {
   const [banner, setBanner] = useState<string>('');
   const [busyIds, setBusyIds] = useState<Record<string, boolean>>({});
 
-  // Refresh test access data when component mounts and periodically
+  // NEW SIMPLE REFRESH MECHANISM
   useEffect(() => {
     const refreshTestAccess = async () => {
       try {
@@ -47,28 +47,10 @@ const CategorySelector: React.FC = () => {
     if (user) {
       refreshTestAccess();
       
-      // Refresh every 2 seconds to catch admin changes more quickly
-      const interval = setInterval(refreshTestAccess, 2000);
+      // Refresh every 3 seconds
+      const interval = setInterval(refreshTestAccess, 3000);
       return () => clearInterval(interval);
     }
-  }, [user, dispatch]);
-
-  // Also refresh when the component becomes visible (user switches tabs)
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (!document.hidden && user) {
-        try {
-          const updated = await supabaseService.fetchTestAccess();
-          dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
-          console.log('Refreshed test access data on visibility change:', updated);
-        } catch (error) {
-          console.error('Failed to refresh test access on visibility change:', error);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user, dispatch]);
 
   const requestAccess = async (category: Category) => {
@@ -124,29 +106,21 @@ const CategorySelector: React.FC = () => {
     return entry?.status === 'requested';
   }
 
-  // Test access functions (using same pattern as category access)
+  // NEW SIMPLE TEST ACCESS FUNCTIONS
   const isTestApproved = (testId: string) => {
     if (!user) return false;
-    const entry = state.testAccess?.find(a => a.userId === user.id && a.testId === testId);
-    console.log(`Test ${testId} approval check:`, { 
-      userId: user.id, 
-      entry, 
-      status: entry?.status, 
-      isApproved: entry?.status === 'approved',
-      allTestAccess: state.testAccess 
-    });
-    return entry?.status === 'approved';
+    const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
+    const isApproved = entry?.status === 'approved';
+    console.log(`Test ${testId} approved:`, isApproved, 'Entry:', entry);
+    return isApproved;
   }
+  
   const isTestRequested = (testId: string) => {
     if (!user) return false;
-    const entry = state.testAccess?.find(a => a.userId === user.id && a.testId === testId);
-    console.log(`Test ${testId} request check:`, { 
-      userId: user.id, 
-      entry, 
-      status: entry?.status, 
-      isRequested: entry?.status === 'requested'
-    });
-    return entry?.status === 'requested';
+    const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
+    const isRequested = entry?.status === 'requested';
+    console.log(`Test ${testId} requested:`, isRequested, 'Entry:', entry);
+    return isRequested;
   }
 
   return (
@@ -243,9 +217,11 @@ const CategorySelector: React.FC = () => {
                   dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
                   setBanner('Test access status refreshed!');
                   setTimeout(() => setBanner(''), 2000);
+                  console.log('Manual refresh completed:', updated);
                 } catch (error) {
                   setBanner('Failed to refresh test access status');
                   setTimeout(() => setBanner(''), 3000);
+                  console.error('Manual refresh failed:', error);
                 }
               }}
               className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
