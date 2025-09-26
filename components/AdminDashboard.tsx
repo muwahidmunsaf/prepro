@@ -276,6 +276,7 @@ const AdminDashboard: React.FC = () => {
     const newStatus = currentStatus === 'approved' ? 'locked' : 'approved';
     
     console.log('Toggling test access:', { userId, testId, currentStatus, newStatus });
+    console.log('Current testAccess state:', state.testAccess);
     
     try {
       // First, try to create the test access record in database
@@ -315,26 +316,37 @@ const AdminDashboard: React.FC = () => {
           updatedAt: new Date().toISOString()
         };
         
-            // Store in localStorage
-            localStorage.setItem(testAccessKey, JSON.stringify(testAccessData));
-            
-            // Also store in global test access array for better sync
-            const globalTestAccess = JSON.parse(localStorage.getItem('global_test_access') || '[]');
-            const existingIndex = globalTestAccess.findIndex((item: any) => item.userId === userId && item.testId === testId);
-            if (existingIndex >= 0) {
-              globalTestAccess[existingIndex] = testAccessData;
-            } else {
-              globalTestAccess.push(testAccessData);
-            }
-            localStorage.setItem('global_test_access', JSON.stringify(globalTestAccess));
-            
-            // Update the state
-            const existingAccess = state.testAccess?.find(a => a.userId === userId && a.testId === testId);
-            if (existingAccess) {
-              dispatch({ type: 'UPDATE_TEST_ACCESS', payload: testAccessData });
-            } else {
-              dispatch({ type: 'ADD_TEST_ACCESS', payload: testAccessData });
-            }
+        console.log('Storing test access data in localStorage:', testAccessData);
+        
+        // Store in localStorage
+        localStorage.setItem(testAccessKey, JSON.stringify(testAccessData));
+        console.log('Stored individual key:', testAccessKey);
+        
+        // Also store in global test access array for better sync
+        const globalTestAccess = JSON.parse(localStorage.getItem('global_test_access') || '[]');
+        console.log('Current global test access:', globalTestAccess);
+        
+        const existingIndex = globalTestAccess.findIndex((item: any) => item.userId === userId && item.testId === testId);
+        if (existingIndex >= 0) {
+          globalTestAccess[existingIndex] = testAccessData;
+          console.log('Updated existing entry at index:', existingIndex);
+        } else {
+          globalTestAccess.push(testAccessData);
+          console.log('Added new entry to global array');
+        }
+        
+        localStorage.setItem('global_test_access', JSON.stringify(globalTestAccess));
+        console.log('Updated global test access:', globalTestAccess);
+        
+        // Update the state
+        const existingAccess = state.testAccess?.find(a => a.userId === userId && a.testId === testId);
+        if (existingAccess) {
+          dispatch({ type: 'UPDATE_TEST_ACCESS', payload: testAccessData });
+          console.log('Updated existing test access in state');
+        } else {
+          dispatch({ type: 'ADD_TEST_ACCESS', payload: testAccessData });
+          console.log('Added new test access to state');
+        }
         
         // Create notification for user
         if (newStatus === 'approved') {

@@ -475,12 +475,16 @@ export async function fetchTestAccess(): Promise<TestAccess[]> {
 function getTestAccessFromLocalStorage(): TestAccess[] {
   const testAccess: TestAccess[] = [];
   
+  console.log('Reading from localStorage, total keys:', localStorage.length);
+  
   // Check individual test access keys
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && key.startsWith('test_access_')) {
+      console.log('Found test access key:', key);
       try {
         const data = JSON.parse(localStorage.getItem(key) || '{}');
+        console.log('Parsed data for key', key, ':', data);
         if (data.userId && data.testId && data.status) {
           testAccess.push({
             id: data.id || `local_${Date.now()}_${i}`,
@@ -489,6 +493,7 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
             status: data.status,
             updatedAt: data.updatedAt || new Date().toISOString()
           });
+          console.log('Added test access from individual key:', data);
         }
       } catch (error) {
         console.error('Error parsing localStorage test access:', error);
@@ -499,8 +504,10 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
   // Also check global test access array
   try {
     const globalTestAccess = localStorage.getItem('global_test_access');
+    console.log('Global test access raw data:', globalTestAccess);
     if (globalTestAccess) {
       const parsed = JSON.parse(globalTestAccess);
+      console.log('Parsed global test access:', parsed);
       if (Array.isArray(parsed)) {
         parsed.forEach((item: any) => {
           if (item.userId && item.testId && item.status) {
@@ -513,6 +520,7 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
                 status: item.status,
                 updatedAt: item.updatedAt || new Date().toISOString()
               });
+              console.log('Added test access from global array:', item);
             }
           }
         });
@@ -522,7 +530,7 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
     console.error('Error parsing global test access:', error);
   }
   
-  console.log('Loaded test access from localStorage:', testAccess);
+  console.log('Final loaded test access from localStorage:', testAccess);
   return testAccess;
 }
 
