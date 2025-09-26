@@ -119,7 +119,7 @@ const AdminDashboard: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-white">Manage Categories</h2>
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Categories</h2>
                 <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"><PlusIcon/> <span>Add Category</span></button>
             </div>
             
@@ -164,7 +164,7 @@ const AdminDashboard: React.FC = () => {
             )}
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Category' : 'Add Category'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Category Name" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Category Name" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
                     <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded-lg w-full">Save</button>
                 </form>
             </Modal>
@@ -376,7 +376,7 @@ const AdminDashboard: React.FC = () => {
     return (
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-white">Manage Users</h2>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Users</h2>
           <div className="space-x-2">
             <button onClick={() => openUserModal(null)} className="bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700">Add User</button>
           </div>
@@ -409,10 +409,10 @@ const AdminDashboard: React.FC = () => {
 
         <Modal isOpen={isUserModalOpen} onClose={closeUserModal} title={editingUser ? 'Edit User' : 'Add User'}>
           <form onSubmit={handleSave} className="space-y-4">
-            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400" />
-            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400" />
-            <input type="text" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Password" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400" />
-            <label className="flex items-center space-x-2 text-white"><input type="checkbox" checked={form.isAdmin} onChange={e => setForm({ ...form, isAdmin: e.target.checked })} /> <span>Admin</span></label>
+            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400" />
+            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400" />
+            <input type="text" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Password" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400" />
+            <label className="flex items-center space-x-2 text-slate-800 dark:text-white"><input type="checkbox" checked={form.isAdmin} onChange={e => setForm({ ...form, isAdmin: e.target.checked })} /> <span>Admin</span></label>
                     <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded-lg w-full">Save</button>
                 </form>
             </Modal>
@@ -447,7 +447,7 @@ const AdminDashboard: React.FC = () => {
               value={testAccessSearch} 
               onChange={e => { setTestAccessSearch(e.target.value); setTestAccessPage(0); }} 
               placeholder="Search tests..." 
-              className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"
+              className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
             />
             <div className="h-96 overflow-auto divide-y divide-slate-200 dark:divide-slate-700 custom-scroll">
               {state.tests
@@ -507,7 +507,7 @@ const AdminDashboard: React.FC = () => {
         {/* Access Manager Modal */}
         <Modal isOpen={!!accessForUser} onClose={()=> setAccessForUser(null)} title={`Manage Access – ${accessForUser?.name || ''}`}>
           <div className="space-y-3">
-            <input value={accessSearch} onChange={e=>{ setAccessSearch(e.target.value); setAccessPage(0); }} placeholder="Search categories" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
+            <input value={accessSearch} onChange={e=>{ setAccessSearch(e.target.value); setAccessPage(0); }} placeholder="Search categories" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
             <div className="h-96 overflow-auto divide-y divide-slate-200 dark:divide-slate-700 custom-scroll">
               {pagedCats.map(cat => {
                 const status = accessForUser ? getAccessStatus(accessForUser.id, cat.id) : 'locked';
@@ -536,8 +536,8 @@ const AdminDashboard: React.FC = () => {
                           )}
                         </button>
                         <div>
-                          <p className="text-white font-medium">{cat.name}</p>
-                          <span className={`text-xs ${status==='approved'?'text-green-400':status==='requested'?'text-yellow-400':'text-slate-400'}`}>{status}</span>
+                          <p className="text-slate-800 dark:text-white font-medium">{cat.name}</p>
+                          <span className={`text-xs ${status==='approved'?'text-green-600 dark:text-green-400':status==='requested'?'text-yellow-600 dark:text-yellow-400':'text-slate-500 dark:text-slate-400'}`}>{status}</span>
                         </div>
                       </div>
                       <div className="space-x-3">
@@ -687,7 +687,7 @@ const AdminDashboard: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-white">Manage Tests</h2>
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Tests</h2>
                 <div className="flex space-x-2">
                     <button onClick={() => setShowTestAccessModal(true)} className="bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-purple-700">
                         <LockIcon className="w-4 h-4"/> <span>Manage Test Access</span>
@@ -721,13 +721,13 @@ const AdminDashboard: React.FC = () => {
             )}
              <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Test' : 'Add Test'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="text" name="title" value={formState.title} onChange={handleInputChange} placeholder="Test Title" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
-                    <select name="categoryId" value={formState.categoryId} onChange={handleInputChange} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white">
+                    <input type="text" name="title" value={formState.title} onChange={handleInputChange} placeholder="Test Title" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
+                    <select name="categoryId" value={formState.categoryId} onChange={handleInputChange} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white">
                         <option value="" className="text-gray-600 bg-slate-700">Select Category</option>
-                        {state.categories.map(c => <option key={c.id} value={c.id} className="text-white bg-slate-700">{c.name}</option>)}
+                        {state.categories.map(c => <option key={c.id} value={c.id} className="text-slate-800 dark:text-white bg-slate-700">{c.name}</option>)}
                     </select>
-                    <input type="number" name="duration" value={formState.duration} onChange={handleInputChange} placeholder="Duration (mins)" required={!editingItem} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
-                    <input type="number" name="totalQuestions" value={formState.totalQuestions} onChange={handleInputChange} placeholder="Total Questions" required={!editingItem} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
+                    <input type="number" name="duration" value={formState.duration} onChange={handleInputChange} placeholder="Duration (mins)" required={!editingItem} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
+                    <input type="number" name="totalQuestions" value={formState.totalQuestions} onChange={handleInputChange} placeholder="Total Questions" required={!editingItem} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
                     <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded-lg w-full">Save</button>
                 </form>
             </Modal>
@@ -862,8 +862,8 @@ const AdminDashboard: React.FC = () => {
     if (!selectedTestForQuestions) {
       return (
         <div>
-          <h2 className="text-2xl font-bold mb-4 text-white">Manage Questions</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Select a test to manage questions.</p>
+          <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">Manage Questions</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Select a test to manage questions.</p>
           <div className="space-y-2">
             {state.tests.map(test => (
               <button
@@ -904,7 +904,7 @@ const AdminDashboard: React.FC = () => {
                       setCurrentView('tests');
                     }
                   }} className="text-indigo-600 hover:text-indigo-800 mb-2">&larr; Back</button>
-                  <h2 className="text-2xl font-bold text-white">Manage Questions for "{selectedTestForQuestions.title}"</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Questions for "{selectedTestForQuestions.title}"</h2>
                 </div>
                 <div className="flex space-x-2">
                     <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"><PlusIcon/> <span>Add Question</span></button>
@@ -925,12 +925,12 @@ const AdminDashboard: React.FC = () => {
 
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Question' : 'Add Question'}>
                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <textarea value={formState.questionText} onChange={e => setFormState(p => ({...p, questionText: e.target.value}))} placeholder="Question Text" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
+                    <textarea value={formState.questionText} onChange={e => setFormState(p => ({...p, questionText: e.target.value}))} placeholder="Question Text" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
                     {formState.options.map((opt, i) => (
-                        <input key={i} type="text" value={opt} onChange={e => handleOptionChange(i, e.target.value)} placeholder={`Option ${i+1}`} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"/>
+                        <input key={i} type="text" value={opt} onChange={e => handleOptionChange(i, e.target.value)} placeholder={`Option ${i+1}`} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
                     ))}
-                    <select value={formState.correctAnswer} onChange={e => setFormState(p => ({...p, correctAnswer: parseInt(e.target.value)}))} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-white">
-                        {formState.options.map((_, i) => <option key={i} value={i} className="text-white bg-slate-700">Correct Answer: Option {i+1}</option>)}
+                    <select value={formState.correctAnswer} onChange={e => setFormState(p => ({...p, correctAnswer: parseInt(e.target.value)}))} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white">
+                        {formState.options.map((_, i) => <option key={i} value={i} className="text-slate-800 dark:text-white bg-slate-700">Correct Answer: Option {i+1}</option>)}
                     </select>
                     <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded-lg w-full">Save</button>
                 </form>
@@ -953,7 +953,7 @@ const AdminDashboard: React.FC = () => {
                     />
                     {selectedFile && (
                         <div className="text-center">
-                            <p className="text-white mb-2">Selected file: {selectedFile.name}</p>
+                            <p className="text-slate-800 dark:text-white mb-2">Selected file: {selectedFile.name}</p>
                             <button
                                 onClick={processFileAndUpload}
                                 disabled={isUploading}
@@ -994,7 +994,7 @@ const AdminDashboard: React.FC = () => {
             >
               &larr; Back to Categories
             </button>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
               Tests for "{viewingCategoryTests?.name}"
             </h2>
           </div>
@@ -1086,7 +1086,7 @@ const AdminDashboard: React.FC = () => {
               placeholder={`Search tests in ${viewingCategoryTests.name}...`} 
               value={testSearch}
               onChange={(e) => setTestSearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"
+              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
             />
           ) : currentView === 'categories' ? (
             <input 
@@ -1094,7 +1094,7 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search categories..." 
               value={categorySearch}
               onChange={(e) => setCategorySearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"
+              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
             />
           ) : currentView === 'tests' ? (
             <input 
@@ -1102,7 +1102,7 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search tests by title or category..." 
               value={testSearch}
               onChange={(e) => setTestSearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"
+              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
             />
           ) : (
             <input 
@@ -1110,7 +1110,7 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search users by name or email..." 
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-white placeholder-gray-400"
+              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
             />
           )}
         </div>

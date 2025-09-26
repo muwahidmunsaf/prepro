@@ -36,6 +36,12 @@ const UserDashboard: React.FC = () => {
 
   const getTestTitle = (testId: string) => state.tests.find(t => t.id === testId)?.title || 'Unknown Test';
 
+  const handleResumeTest = () => {
+    if (pausedSession) {
+      navigate(`/test/${pausedSession.testId}`);
+    }
+  };
+
   // Calculate performance metrics
   const totalAttempts = userResults.length;
   const averageScore = totalAttempts > 0 
