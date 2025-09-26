@@ -401,7 +401,7 @@ const AdminDashboard: React.FC = () => {
               <div className="space-x-2">
                 <button onClick={() => openUserModal(u)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
                 <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                <button onClick={() => setHistoryUser(u)} className="text-slate-200 hover:text-white text-sm border border-slate-400 px-2 py-0.5 rounded">View History</button>
+                <button onClick={() => setHistoryUser(u)} className="text-slate-600 dark:text-slate-200 hover:text-slate-800 dark:hover:text-white text-sm border border-slate-400 dark:border-slate-500 px-2 py-0.5 rounded">View History</button>
               </div>
             </li>
           ))}
