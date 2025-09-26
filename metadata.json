@@ -1,0 +1,5 @@
+{
+  "name": "PrepPro: AI-Powered Job Test Preparation",
+  "description": "A comprehensive job test preparation platform. Users can take timed, categorized tests with shuffled questions. A powerful admin panel allows for full management of tests, including bulk MCQ uploads and AI-powered question generation using Gemini.",
+  "requestFramePermissions": []
+}
