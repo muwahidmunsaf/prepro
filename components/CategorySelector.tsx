@@ -47,10 +47,28 @@ const CategorySelector: React.FC = () => {
     if (user) {
       refreshTestAccess();
       
-      // Refresh every 5 seconds to catch admin changes more quickly
-      const interval = setInterval(refreshTestAccess, 5000);
+      // Refresh every 2 seconds to catch admin changes more quickly
+      const interval = setInterval(refreshTestAccess, 2000);
       return () => clearInterval(interval);
     }
+  }, [user, dispatch]);
+
+  // Also refresh when the component becomes visible (user switches tabs)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && user) {
+        try {
+          const updated = await supabaseService.fetchTestAccess();
+          dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
+          console.log('Refreshed test access data on visibility change:', updated);
+        } catch (error) {
+          console.error('Failed to refresh test access on visibility change:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user, dispatch]);
 
   const requestAccess = async (category: Category) => {

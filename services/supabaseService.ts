@@ -473,7 +473,7 @@ export async function fetchTestAccess(): Promise<TestAccess[]> {
 function getTestAccessFromLocalStorage(): TestAccess[] {
   const testAccess: TestAccess[] = [];
   
-  // Check global test access array
+  // Check global test access array first
   try {
     const globalTestAccess = localStorage.getItem('global_test_access');
     console.log('Reading global_test_access from localStorage:', globalTestAccess);
@@ -485,18 +485,46 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
           if (item.userId && item.testId && item.status) {
             testAccess.push({
               id: item.id || `local_${Date.now()}_${Math.random()}`,
-              userId: item.userId,
-              testId: item.testId,
+              userId: String(item.userId),
+              testId: String(item.testId),
               status: item.status,
               updatedAt: item.updatedAt || new Date().toISOString()
             });
-            console.log('Added test access from localStorage:', item);
+            console.log('Added test access from global array:', item);
           }
         });
       }
     }
   } catch (error) {
-    console.error('Error parsing localStorage test access:', error);
+    console.error('Error parsing global localStorage test access:', error);
+  }
+  
+  // Also check individual keys as backup
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('test_access_')) {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        if (data.userId && data.testId && data.status) {
+          // Check if we already have this entry from global array
+          const exists = testAccess.some(ta => 
+            String(ta.userId) === String(data.userId) && String(ta.testId) === String(data.testId)
+          );
+          if (!exists) {
+            testAccess.push({
+              id: data.id || `local_${Date.now()}_${Math.random()}`,
+              userId: String(data.userId),
+              testId: String(data.testId),
+              status: data.status,
+              updatedAt: data.updatedAt || new Date().toISOString()
+            });
+            console.log('Added test access from individual key:', key, data);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing individual localStorage test access:', error);
   }
   
   console.log('Final test access from localStorage:', testAccess);
@@ -537,11 +565,14 @@ function upsertTestAccessToLocalStorage(userId: string, testId: string, status: 
   const globalTestAccess = JSON.parse(localStorage.getItem('global_test_access') || '[]');
   console.log('Current global test access before update:', globalTestAccess);
   
-  const existingIndex = globalTestAccess.findIndex((item: any) => item.userId === userId && item.testId === testId);
+  // Find existing entry by userId and testId (convert to string for comparison)
+  const existingIndex = globalTestAccess.findIndex((item: any) => 
+    String(item.userId) === String(userId) && String(item.testId) === String(testId)
+  );
   
   if (existingIndex >= 0) {
     globalTestAccess[existingIndex] = testAccessData;
-    console.log('Updated existing entry at index:', existingIndex);
+    console.log('Updated existing entry at index:', existingIndex, 'Old data:', globalTestAccess[existingIndex]);
   } else {
     globalTestAccess.push(testAccessData);
     console.log('Added new entry to global array');
@@ -549,6 +580,11 @@ function upsertTestAccessToLocalStorage(userId: string, testId: string, status: 
   
   localStorage.setItem('global_test_access', JSON.stringify(globalTestAccess));
   console.log('Updated global test access in localStorage:', globalTestAccess);
+  
+  // Also store individual key for backup
+  const individualKey = `test_access_${userId}_${testId}`;
+  localStorage.setItem(individualKey, JSON.stringify(testAccessData));
+  console.log('Also stored individual key:', individualKey);
   
   return testAccessData;
 }
