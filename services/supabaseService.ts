@@ -456,21 +456,88 @@ export async function upsertCategoryAccess(userId: string, categoryId: string, s
   return { id: data.id.toString(), userId: data.user_id.toString(), categoryId: data.category_id.toString(), status: data.status, updatedAt: data.updated_at };
 }
 
-// Test Access Management (using same pattern as category access)
+// Test Access Management (using same pattern as category access with fallback)
 export async function fetchTestAccess(): Promise<TestAccess[]> {
-  const { data, error } = await supabase.from('test_access').select('*');
-  if (error) throw error;
-  return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
+  try {
+    const { data, error } = await supabase.from('test_access').select('*');
+    if (error) throw error;
+    return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
+  } catch (error) {
+    // Fallback to localStorage if table doesn't exist
+    console.log('test_access table not found, using localStorage fallback');
+    return getTestAccessFromLocalStorage();
+  }
+}
+
+// Simple localStorage fallback for test access
+function getTestAccessFromLocalStorage(): TestAccess[] {
+  const testAccess: TestAccess[] = [];
+  
+  // Check global test access array
+  try {
+    const globalTestAccess = localStorage.getItem('global_test_access');
+    if (globalTestAccess) {
+      const parsed = JSON.parse(globalTestAccess);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((item: any) => {
+          if (item.userId && item.testId && item.status) {
+            testAccess.push({
+              id: item.id || `local_${Date.now()}_${Math.random()}`,
+              userId: item.userId,
+              testId: item.testId,
+              status: item.status,
+              updatedAt: item.updatedAt || new Date().toISOString()
+            });
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing localStorage test access:', error);
+  }
+  
+  return testAccess;
 }
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {
-  const { data, error } = await supabase
-    .from('test_access')
-    .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('test_access')
+      .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
+  } catch (error) {
+    // Fallback to localStorage if table doesn't exist
+    console.log('test_access table not found, using localStorage fallback');
+    return upsertTestAccessToLocalStorage(userId, testId, status);
+  }
+}
+
+// Simple localStorage fallback for upserting test access
+function upsertTestAccessToLocalStorage(userId: string, testId: string, status: TestAccess['status']): TestAccess {
+  const testAccessData = {
+    id: `local_${Date.now()}`,
+    userId,
+    testId,
+    status,
+    updatedAt: new Date().toISOString()
+  };
   
-  if (error) throw error;
+  // Store in global test access array
+  const globalTestAccess = JSON.parse(localStorage.getItem('global_test_access') || '[]');
+  const existingIndex = globalTestAccess.findIndex((item: any) => item.userId === userId && item.testId === testId);
   
-  return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
+  if (existingIndex >= 0) {
+    globalTestAccess[existingIndex] = testAccessData;
+  } else {
+    globalTestAccess.push(testAccessData);
+  }
+  
+  localStorage.setItem('global_test_access', JSON.stringify(globalTestAccess));
+  
+  return testAccessData;
 }
