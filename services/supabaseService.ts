@@ -461,14 +461,69 @@ export async function fetchTestAccess(): Promise<TestAccess[]> {
   try {
     const { data, error } = await supabase.from('test_access').select('*');
     if (error) {
-      console.log('test_access table not found, using fallback');
-      return []; // Return empty array if table doesn't exist
+      console.log('test_access table not found, using localStorage fallback');
+      return getTestAccessFromLocalStorage();
     }
     return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
   } catch (error) {
-    console.log('Error fetching test access, using fallback:', error);
-    return [];
+    console.log('Error fetching test access, using localStorage fallback:', error);
+    return getTestAccessFromLocalStorage();
   }
+}
+
+// Helper function to get test access from localStorage
+function getTestAccessFromLocalStorage(): TestAccess[] {
+  const testAccess: TestAccess[] = [];
+  
+  // Check individual test access keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('test_access_')) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        if (data.userId && data.testId && data.status) {
+          testAccess.push({
+            id: data.id || `local_${Date.now()}_${i}`,
+            userId: data.userId,
+            testId: data.testId,
+            status: data.status,
+            updatedAt: data.updatedAt || new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing localStorage test access:', error);
+      }
+    }
+  }
+  
+  // Also check global test access array
+  try {
+    const globalTestAccess = localStorage.getItem('global_test_access');
+    if (globalTestAccess) {
+      const parsed = JSON.parse(globalTestAccess);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((item: any) => {
+          if (item.userId && item.testId && item.status) {
+            // Avoid duplicates
+            if (!testAccess.some(ta => ta.userId === item.userId && ta.testId === item.testId)) {
+              testAccess.push({
+                id: item.id || `global_${Date.now()}_${Math.random()}`,
+                userId: item.userId,
+                testId: item.testId,
+                status: item.status,
+                updatedAt: item.updatedAt || new Date().toISOString()
+              });
+            }
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing global test access:', error);
+  }
+  
+  console.log('Loaded test access from localStorage:', testAccess);
+  return testAccess;
 }
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {

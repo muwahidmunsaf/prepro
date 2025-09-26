@@ -47,8 +47,8 @@ const CategorySelector: React.FC = () => {
     if (user) {
       refreshTestAccess();
       
-      // Refresh every 10 seconds to catch admin changes
-      const interval = setInterval(refreshTestAccess, 10000);
+      // Refresh every 5 seconds to catch admin changes more quickly
+      const interval = setInterval(refreshTestAccess, 5000);
       return () => clearInterval(interval);
     }
   }, [user, dispatch]);
@@ -110,7 +110,15 @@ const CategorySelector: React.FC = () => {
   const isTestApproved = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === user.id && a.testId === testId);
-    return entry?.status?.toLowerCase() === 'approved';
+    const isApproved = entry?.status?.toLowerCase() === 'approved';
+    console.log(`Test ${testId} approval check:`, { 
+      userId: user.id, 
+      entry, 
+      status: entry?.status, 
+      isApproved,
+      allTestAccess: state.testAccess 
+    });
+    return isApproved;
   }
   const isTestRequested = (testId: string) => {
     if (!user) return false;
@@ -206,7 +214,9 @@ const CategorySelector: React.FC = () => {
                   dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
                   setBanner('Test access status refreshed!');
                   setTimeout(() => setBanner(''), 2000);
+                  console.log('Manual refresh - test access data:', updated);
                 } catch (error) {
+                  console.error('Manual refresh failed:', error);
                   setBanner('Failed to refresh test access status');
                   setTimeout(() => setBanner(''), 3000);
                 }
