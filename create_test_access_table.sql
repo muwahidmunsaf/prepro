@@ -1,15 +1,12 @@
--- Complete SQL script to create test_access table
--- Run this in your Supabase SQL Editor
+-- Create test_access table for PrepPro Application
+-- Run this SQL in your Supabase SQL Editor
 
--- Drop the table if it exists (to start fresh)
-DROP TABLE IF EXISTS test_access CASCADE;
-
--- Create the test_access table
-CREATE TABLE test_access (
+-- Test Access control table
+CREATE TABLE IF NOT EXISTS test_access (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     test_id INTEGER NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'locked' CHECK (status IN ('locked', 'requested', 'approved')),
+    status TEXT NOT NULL DEFAULT 'locked', -- locked | requested | approved
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id, test_id)
 );
@@ -17,18 +14,20 @@ CREATE TABLE test_access (
 -- Enable Row Level Security
 ALTER TABLE test_access ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policy to allow all operations (adjust for production)
+-- Create RLS Policy to allow public access for anon users
 CREATE POLICY "Allow all operations on test_access" ON test_access FOR ALL USING (true) WITH CHECK (true);
 
--- Create indexes for better performance
-CREATE INDEX idx_test_access_user_test ON test_access(user_id, test_id);
-CREATE INDEX idx_test_access_status ON test_access(status);
+-- Create index for better performance
+CREATE INDEX IF NOT EXISTS idx_test_access_user_test ON test_access(user_id, test_id);
 
--- Insert some sample data (optional)
--- INSERT INTO test_access (user_id, test_id, status) VALUES 
--- (1, 1, 'approved'),
--- (2, 1, 'locked'),
--- (1, 2, 'locked');
-
--- Verify the table was created
-SELECT * FROM test_access LIMIT 5;
+-- Insert some initial test access data (optional - for testing)
+-- This will lock all tests for all users by default
+INSERT INTO test_access (user_id, test_id, status)
+SELECT u.id, t.id, 'locked'
+FROM users u
+CROSS JOIN tests t
+WHERE NOT EXISTS (
+    SELECT 1 FROM test_access ta 
+    WHERE ta.user_id = u.id AND ta.test_id = t.id
+)
+ON CONFLICT (user_id, test_id) DO NOTHING;

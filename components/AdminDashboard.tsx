@@ -312,16 +312,26 @@ const AdminDashboard: React.FC = () => {
           updatedAt: new Date().toISOString()
         };
         
-        // Store in localStorage
-        localStorage.setItem(testAccessKey, JSON.stringify(testAccessData));
-        
-        // Update the state
-        const existingAccess = state.testAccess?.find(a => a.userId === userId && a.testId === testId);
-        if (existingAccess) {
-          dispatch({ type: 'UPDATE_TEST_ACCESS', payload: testAccessData });
-        } else {
-          dispatch({ type: 'ADD_TEST_ACCESS', payload: testAccessData });
-        }
+            // Store in localStorage
+            localStorage.setItem(testAccessKey, JSON.stringify(testAccessData));
+            
+            // Also store in global test access array for better sync
+            const globalTestAccess = JSON.parse(localStorage.getItem('global_test_access') || '[]');
+            const existingIndex = globalTestAccess.findIndex((item: any) => item.userId === userId && item.testId === testId);
+            if (existingIndex >= 0) {
+              globalTestAccess[existingIndex] = testAccessData;
+            } else {
+              globalTestAccess.push(testAccessData);
+            }
+            localStorage.setItem('global_test_access', JSON.stringify(globalTestAccess));
+            
+            // Update the state
+            const existingAccess = state.testAccess?.find(a => a.userId === userId && a.testId === testId);
+            if (existingAccess) {
+              dispatch({ type: 'UPDATE_TEST_ACCESS', payload: testAccessData });
+            } else {
+              dispatch({ type: 'ADD_TEST_ACCESS', payload: testAccessData });
+            }
         
         // Create notification for user
         if (newStatus === 'approved') {
@@ -330,7 +340,7 @@ const AdminDashboard: React.FC = () => {
         }
         
         console.log(`Test access ${newStatus} successfully (stored locally)`);
-        alert(`Test access ${newStatus} successfully! Note: This is stored locally until the database table is created.`);
+            alert(`Test access ${newStatus} successfully! Note: This is stored locally. Please create the test_access table in your database for permanent storage.`);
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
         alert('Failed to update test access. Please run the database migration first.');

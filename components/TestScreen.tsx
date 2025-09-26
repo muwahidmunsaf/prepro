@@ -220,9 +220,9 @@ const TestScreen: React.FC = () => {
             </div>
         )}
         <div className={`bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg ${(isPaused || endedForCheating || showConfirm || showSubmitConfirm) ? 'blur-sm pointer-events-none' : ''}`}>
-            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-4 mb-6">
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{test.title}</h1>
-                <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-200 dark:border-slate-700 pb-4 mb-6 gap-4">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">{test.title}</h1>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     <Timer duration={test.duration} onTimeUp={confirmSubmit} isPaused={isPaused || !!showConfirm || showSubmitConfirm} initialSeconds={timeLeft} onTick={setTimeLeft} />
                     {!endedForCheating && (
                       <button onClick={() => { 
@@ -234,7 +234,7 @@ const TestScreen: React.FC = () => {
                           const payload = { userAnswers, timeLeft, stableQuestions, endedForCheating: false, isPaused: true };
                           try { localStorage.setItem(key, JSON.stringify(payload)); } catch {}
                         }
-                      }} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg">Pause</button>
+                      }} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base">Pause</button>
                     )}
                 </div>
             </div>
@@ -242,10 +242,10 @@ const TestScreen: React.FC = () => {
             <div>
             {currentQuestions.map((q, index) => (
                 <div key={q.id} className="mb-8">
-                <p className="font-semibold text-lg text-slate-800 dark:text-slate-100 mb-4">
+                <p className="font-semibold text-base sm:text-lg text-slate-800 dark:text-slate-100 mb-4">
                     {startIndex + index + 1}. {q.questionText}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                     {q.options.map((option, optIndex) => {
                     const userAnswer = userAnswers.find(a => a.questionId === q.id);
                     const isSelected = userAnswer?.selectedAnswer === optIndex;
@@ -268,25 +268,25 @@ const TestScreen: React.FC = () => {
             ))}
             </div>
             
-            <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                <div className="flex space-x-2">
+            <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex space-x-2 order-2 sm:order-1">
                     {currentPage > 0 && (
-                    <button onClick={() => setCurrentPage(p => p - 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">
+                    <button onClick={() => setCurrentPage(p => p - 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm sm:text-base">
                         Previous
                     </button>
                     )}
                     {currentPage < totalPages - 1 && (
-                    <button onClick={() => setCurrentPage(p => p + 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">
+                    <button onClick={() => setCurrentPage(p => p + 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm sm:text-base">
                         Next
                     </button>
                     )}
                 </div>
                 
-                <p className="text-sm text-slate-500">Page {currentPage + 1} of {totalPages}</p>
+                <p className="text-sm text-slate-500 order-1 sm:order-2">Page {currentPage + 1} of {totalPages}</p>
 
                 <button
                     onClick={handleSubmit}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg text-sm sm:text-base order-3"
                 >
                     End & Submit Test
                 </button>

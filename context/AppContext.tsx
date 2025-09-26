@@ -23,6 +23,10 @@ const initialState: AppState = {
   currentUser: getInitialUser(),
   categoryAccess: [],
   testAccess: [],
+  isDarkMode: (() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : true; // Default to dark mode
+  })(),
 };
 
 const appReducer = (state: AppState, action: Action): AppState => {
@@ -125,6 +129,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
       const newAccess = (state.testAccess || []).map(a => a.id === action.payload.id ? action.payload : a);
       return { ...state, testAccess: newAccess };
     }
+    case 'TOGGLE_DARK_MODE': {
+      const newMode = !state.isDarkMode;
+      localStorage.setItem('darkMode', JSON.stringify(newMode));
+      
+      // Apply theme to document
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+      }
+      
+      return { ...state, isDarkMode: newMode };
+    }
     default:
       return state;
   }
@@ -145,6 +164,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         // Get current user from localStorage
         const currentUser = getInitialUser();
+
+        // Apply initial dark mode
+        const savedDarkMode = localStorage.getItem('darkMode');
+        const isDarkMode = savedDarkMode ? JSON.parse(savedDarkMode) : true;
+        if (isDarkMode) {
+          document.documentElement.classList.add('dark');
+          document.body.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+        }
 
         // Load all data from Supabase only if user is logged in
         const [categories, tests, questions, results, users, categoryAccess, testAccess] = await Promise.all([
@@ -174,6 +204,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
+        // Also check for any test access data stored in a single key
+        try {
+          const globalTestAccess = localStorage.getItem('global_test_access');
+          if (globalTestAccess) {
+            const parsed = JSON.parse(globalTestAccess);
+            if (Array.isArray(parsed)) {
+              localTestAccess.push(...parsed);
+              console.log('Loaded global test access from localStorage:', parsed);
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing global test access:', error);
+        }
+
         // Merge database and localStorage test access
         const mergedTestAccess = [...testAccess, ...localTestAccess.filter(lt => 
           !testAccess.some(ta => ta.userId === lt.userId && ta.testId === lt.testId)
@@ -189,7 +233,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             results,
             currentUser,
             categoryAccess,
-            testAccess: mergedTestAccess
+            testAccess: mergedTestAccess,
+            isDarkMode
           } 
         });
         setBootstrapped(true);

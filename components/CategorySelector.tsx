@@ -192,11 +192,29 @@ const CategorySelector: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-md">
-          <div className="flex items-center mb-6">
-            <button onClick={() => setSelectedCategory(null)} className="mr-4 text-indigo-600 hover:text-indigo-800">
-                &larr; Back
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <button onClick={() => setSelectedCategory(null)} className="mr-4 text-indigo-600 hover:text-indigo-800">
+                  &larr; Back
+              </button>
+              <h1 className="text-3xl font-bold text-slate-800 dark:text-white">{selectedCategory.name} Tests</h1>
+            </div>
+            <button 
+              onClick={async () => {
+                try {
+                  const updated = await supabaseService.fetchTestAccess();
+                  dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
+                  setBanner('Test access status refreshed!');
+                  setTimeout(() => setBanner(''), 2000);
+                } catch (error) {
+                  setBanner('Failed to refresh test access status');
+                  setTimeout(() => setBanner(''), 3000);
+                }
+              }}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              🔄 Refresh Status
             </button>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-white">{selectedCategory.name} Tests</h1>
           </div>
           {testsForCategory.length > 0 ? (
             <ul className="space-y-4">

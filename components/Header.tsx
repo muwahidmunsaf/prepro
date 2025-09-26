@@ -10,10 +10,6 @@ const Header: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Array<{id:string;title:string;message:string;created_at:string;is_read:boolean}>>([]);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : true; // Default to dark mode
-  });
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,45 +42,8 @@ const Header: React.FC = () => {
   };
 
   const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    localStorage.setItem('darkMode', JSON.stringify(newMode));
-    
-    // Force apply the theme immediately
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
+    dispatch({ type: 'TOGGLE_DARK_MODE' });
   };
-
-  // Apply dark mode on mount and when it changes
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
-  // Apply initial dark mode on component mount
-  useEffect(() => {
-    const saved = localStorage.getItem('darkMode');
-    const initialMode = saved ? JSON.parse(saved) : true;
-    setIsDarkMode(initialMode);
-    
-    if (initialMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
-  }, []);
 
   const homeLink = state.currentUser ? (state.currentUser.isAdmin ? '/admin' : '/dashboard') : '/';
 
@@ -97,16 +56,16 @@ const Header: React.FC = () => {
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
             </svg>
           </div>
-          <span className="text-xl font-bold text-white">PrepPro</span>
+          <span className="text-lg sm:text-xl font-bold text-white">PrepPro</span>
         </Link>
-        <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleDarkMode}
             className="p-2 text-white/80 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            title={state.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            <span className="text-lg sm:text-xl">{isDarkMode ? '☀️' : '🌙'}</span>
+            <span className="text-lg sm:text-xl">{state.isDarkMode ? '☀️' : '🌙'}</span>
           </button>
           
           {state.currentUser && (
@@ -148,28 +107,31 @@ const Header: React.FC = () => {
           )}
           {state.currentUser ? (
             <>
-              <div className="flex items-center space-x-2 text-white">
+              <div className="hidden sm:flex items-center space-x-2 text-white">
                 <UserIcon className="w-5 h-5" />
-                <span>{state.currentUser.name}</span>
+                <span className="text-sm md:text-base">{state.currentUser.name}</span>
               </div>
               <button
                 onClick={handleSignOut}
-                className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 text-xs sm:text-sm"
               >
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
+                <span className="sm:hidden">Out</span>
               </button>
             </>
           ) : (
             <>
-              <Link to="/auth" className="text-slate-300 hover:text-white transition-colors">
-                Sign In
+              <Link to="/auth" className="text-slate-300 hover:text-white transition-colors text-sm sm:text-base">
+                <span className="hidden sm:inline">Sign In</span>
+                <span className="sm:hidden">In</span>
               </Link>
               <Link
                 to="/auth"
                 state={{ isSignUp: true }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 text-xs sm:text-sm"
               >
-                Sign Up
+                <span className="hidden sm:inline">Sign Up</span>
+                <span className="sm:hidden">Up</span>
               </Link>
             </>
           )}

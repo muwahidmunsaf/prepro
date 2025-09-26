@@ -52,6 +52,14 @@ export interface CategoryAccess {
   updatedAt?: string;
 }
 
+export interface TestAccess {
+  id: string;
+  userId: string;
+  testId: string;
+  status: 'locked' | 'requested' | 'approved';
+  updatedAt?: string;
+}
+
 export type AppState = {
   users: User[];
   categories: Category[];
@@ -60,6 +68,8 @@ export type AppState = {
   results: TestResult[];
   currentUser: User | null;
   categoryAccess?: CategoryAccess[];
+  testAccess?: TestAccess[];
+  isDarkMode: boolean;
 };
 
 export type Action =
@@ -80,4 +90,11 @@ export type Action =
   | { type: 'UPDATE_QUESTION'; payload: Question }
   | { type: 'DELETE_QUESTION'; payload: string }
   | { type: 'BULK_ADD_QUESTIONS'; payload: Question[] }
-  | { type: 'ADD_RESULT'; payload: TestResult };
+  | { type: 'ADD_RESULT'; payload: TestResult }
+  | { type: 'SET_CATEGORY_ACCESS'; payload: CategoryAccess[] }
+  | { type: 'ADD_CATEGORY_ACCESS'; payload: CategoryAccess }
+  | { type: 'UPDATE_CATEGORY_ACCESS'; payload: CategoryAccess }
+  | { type: 'SET_TEST_ACCESS'; payload: TestAccess[] }
+  | { type: 'ADD_TEST_ACCESS'; payload: TestAccess }
+  | { type: 'UPDATE_TEST_ACCESS'; payload: TestAccess }
+  | { type: 'TOGGLE_DARK_MODE' };
