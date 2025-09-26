@@ -456,100 +456,21 @@ export async function upsertCategoryAccess(userId: string, categoryId: string, s
   return { id: data.id.toString(), userId: data.user_id.toString(), categoryId: data.category_id.toString(), status: data.status, updatedAt: data.updated_at };
 }
 
-// Test Access Management
+// Test Access Management (using same pattern as category access)
 export async function fetchTestAccess(): Promise<TestAccess[]> {
-  try {
-    const { data, error } = await supabase.from('test_access').select('*');
-    if (error) {
-      console.log('test_access table not found, using localStorage fallback');
-      return getTestAccessFromLocalStorage();
-    }
-    return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
-  } catch (error) {
-    console.log('Error fetching test access, using localStorage fallback:', error);
-    return getTestAccessFromLocalStorage();
-  }
-}
-
-// Helper function to get test access from localStorage
-function getTestAccessFromLocalStorage(): TestAccess[] {
-  const testAccess: TestAccess[] = [];
-  
-  console.log('Reading from localStorage, total keys:', localStorage.length);
-  
-  // Check individual test access keys
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('test_access_')) {
-      console.log('Found test access key:', key);
-      try {
-        const data = JSON.parse(localStorage.getItem(key) || '{}');
-        console.log('Parsed data for key', key, ':', data);
-        if (data.userId && data.testId && data.status) {
-          testAccess.push({
-            id: data.id || `local_${Date.now()}_${i}`,
-            userId: data.userId,
-            testId: data.testId,
-            status: data.status,
-            updatedAt: data.updatedAt || new Date().toISOString()
-          });
-          console.log('Added test access from individual key:', data);
-        }
-      } catch (error) {
-        console.error('Error parsing localStorage test access:', error);
-      }
-    }
-  }
-  
-  // Also check global test access array
-  try {
-    const globalTestAccess = localStorage.getItem('global_test_access');
-    console.log('Global test access raw data:', globalTestAccess);
-    if (globalTestAccess) {
-      const parsed = JSON.parse(globalTestAccess);
-      console.log('Parsed global test access:', parsed);
-      if (Array.isArray(parsed)) {
-        parsed.forEach((item: any) => {
-          if (item.userId && item.testId && item.status) {
-            // Avoid duplicates
-            if (!testAccess.some(ta => ta.userId === item.userId && ta.testId === item.testId)) {
-              testAccess.push({
-                id: item.id || `global_${Date.now()}_${Math.random()}`,
-                userId: item.userId,
-                testId: item.testId,
-                status: item.status,
-                updatedAt: item.updatedAt || new Date().toISOString()
-              });
-              console.log('Added test access from global array:', item);
-            }
-          }
-        });
-      }
-    }
-  } catch (error) {
-    console.error('Error parsing global test access:', error);
-  }
-  
-  console.log('Final loaded test access from localStorage:', testAccess);
-  return testAccess;
+  const { data, error } = await supabase.from('test_access').select('*');
+  if (error) throw error;
+  return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
 }
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {
-  try {
-    const { data, error } = await supabase
-      .from('test_access')
-      .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error with test_access table:', error);
-      throw new Error(`test_access table not found. Please run the database migration. Error: ${error.message}`);
-    }
-    
-    return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
-  } catch (error) {
-    console.error('Failed to upsert test access:', error);
-    throw error;
-  }
+  const { data, error } = await supabase
+    .from('test_access')
+    .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
 }

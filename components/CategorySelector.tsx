@@ -106,24 +106,16 @@ const CategorySelector: React.FC = () => {
     return entry?.status === 'requested';
   }
 
-  // Test access functions
+  // Test access functions (using same pattern as category access)
   const isTestApproved = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === user.id && a.testId === testId);
-    const isApproved = entry?.status?.toLowerCase() === 'approved';
-    console.log(`Test ${testId} approval check:`, { 
-      userId: user.id, 
-      entry, 
-      status: entry?.status, 
-      isApproved,
-      allTestAccess: state.testAccess 
-    });
-    return isApproved;
+    return entry?.status === 'approved';
   }
   const isTestRequested = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === user.id && a.testId === testId);
-    return entry?.status?.toLowerCase() === 'requested';
+    return entry?.status === 'requested';
   }
 
   return (
@@ -214,9 +206,7 @@ const CategorySelector: React.FC = () => {
                   dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
                   setBanner('Test access status refreshed!');
                   setTimeout(() => setBanner(''), 2000);
-                  console.log('Manual refresh - test access data:', updated);
                 } catch (error) {
-                  console.error('Manual refresh failed:', error);
                   setBanner('Failed to refresh test access status');
                   setTimeout(() => setBanner(''), 3000);
                 }
