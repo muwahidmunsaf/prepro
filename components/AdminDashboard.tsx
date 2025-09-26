@@ -294,6 +294,9 @@ const AdminDashboard: React.FC = () => {
       if (newStatus === 'approved') {
         const test = state.tests.find(t => t.id === testId);
         await supabaseService.createNotification(userId, 'Test Access Granted', `You now have access to the test: ${test?.title || 'Unknown Test'}`);
+      } else {
+        const test = state.tests.find(t => t.id === testId);
+        await supabaseService.createNotification(userId, 'Test Access Revoked', `Your access to the test "${test?.title || 'Unknown Test'}" has been revoked.`);
       }
       
       // Show success message
@@ -337,6 +340,9 @@ const AdminDashboard: React.FC = () => {
         if (newStatus === 'approved') {
           const test = state.tests.find(t => t.id === testId);
           await supabaseService.createNotification(userId, 'Test Access Granted', `You now have access to the test: ${test?.title || 'Unknown Test'}`);
+        } else {
+          const test = state.tests.find(t => t.id === testId);
+          await supabaseService.createNotification(userId, 'Test Access Revoked', `Your access to the test "${test?.title || 'Unknown Test'}" has been revoked.`);
         }
         
         console.log(`Test access ${newStatus} successfully (stored locally)`);
@@ -558,12 +564,12 @@ const AdminDashboard: React.FC = () => {
                           return (
                             <div key={test.id} className="flex items-center justify-between py-1 text-sm">
                               <div className="flex-1">
-                                <span className="text-slate-300">{test.title}</span>
+                                <span className="text-slate-700 dark:text-slate-300">{test.title}</span>
                                 <span className="ml-2 text-xs text-slate-500">
                                   ({test.totalQuestions} questions, {test.duration}min)
                                 </span>
-                                <div className="text-xs text-slate-400 mt-1">
-                                  Status: <span className={`font-semibold ${testStatus === 'approved' ? 'text-green-400' : 'text-red-400'}`}>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                  Status: <span className={`font-semibold ${testStatus === 'approved' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                     {testStatus}
                                   </span>
                                 </div>
@@ -573,11 +579,11 @@ const AdminDashboard: React.FC = () => {
                                   onClick={() => toggleTestAccess(accessForUser?.id || '', test.id)} 
                                   className={`text-xs px-2 py-1 rounded ${
                                     testStatus === 'approved' 
-                                      ? 'bg-green-600 text-white hover:bg-green-700' 
-                                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                                      ? 'bg-red-600 text-white hover:bg-red-700' 
+                                      : 'bg-green-600 text-white hover:bg-green-700'
                                   }`}
                                 >
-                                  {testStatus === 'approved' ? 'Unlock' : 'Lock'}
+                                  {testStatus === 'approved' ? 'Lock' : 'Unlock'}
                                 </button>
                               </div>
                             </div>
