@@ -476,8 +476,10 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
   // Check global test access array
   try {
     const globalTestAccess = localStorage.getItem('global_test_access');
+    console.log('Reading global_test_access from localStorage:', globalTestAccess);
     if (globalTestAccess) {
       const parsed = JSON.parse(globalTestAccess);
+      console.log('Parsed global test access:', parsed);
       if (Array.isArray(parsed)) {
         parsed.forEach((item: any) => {
           if (item.userId && item.testId && item.status) {
@@ -488,6 +490,7 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
               status: item.status,
               updatedAt: item.updatedAt || new Date().toISOString()
             });
+            console.log('Added test access from localStorage:', item);
           }
         });
       }
@@ -496,6 +499,7 @@ function getTestAccessFromLocalStorage(): TestAccess[] {
     console.error('Error parsing localStorage test access:', error);
   }
   
+  console.log('Final test access from localStorage:', testAccess);
   return testAccess;
 }
 
@@ -527,17 +531,24 @@ function upsertTestAccessToLocalStorage(userId: string, testId: string, status: 
     updatedAt: new Date().toISOString()
   };
   
+  console.log('Storing test access in localStorage:', testAccessData);
+  
   // Store in global test access array
   const globalTestAccess = JSON.parse(localStorage.getItem('global_test_access') || '[]');
+  console.log('Current global test access before update:', globalTestAccess);
+  
   const existingIndex = globalTestAccess.findIndex((item: any) => item.userId === userId && item.testId === testId);
   
   if (existingIndex >= 0) {
     globalTestAccess[existingIndex] = testAccessData;
+    console.log('Updated existing entry at index:', existingIndex);
   } else {
     globalTestAccess.push(testAccessData);
+    console.log('Added new entry to global array');
   }
   
   localStorage.setItem('global_test_access', JSON.stringify(globalTestAccess));
+  console.log('Updated global test access in localStorage:', globalTestAccess);
   
   return testAccessData;
 }
