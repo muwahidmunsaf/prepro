@@ -157,6 +157,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           supabaseService.fetchTestAccess().catch(() => [])
         ]);
 
+        // Load test access from localStorage as fallback
+        const localTestAccess: TestAccess[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('test_access_')) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key) || '{}');
+              if (data.userId && data.testId && data.status) {
+                localTestAccess.push(data);
+                console.log('Loaded test access from localStorage:', data);
+              }
+            } catch (error) {
+              console.error('Error parsing localStorage test access:', error);
+            }
+          }
+        }
+
+        // Merge database and localStorage test access
+        const mergedTestAccess = [...testAccess, ...localTestAccess.filter(lt => 
+          !testAccess.some(ta => ta.userId === lt.userId && ta.testId === lt.testId)
+        )];
+
         dispatch({ 
           type: 'SET_INITIAL_DATA', 
           payload: { 
@@ -167,7 +189,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             results,
             currentUser,
             categoryAccess,
-            testAccess
+            testAccess: mergedTestAccess
           } 
         });
         setBootstrapped(true);

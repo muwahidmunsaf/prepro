@@ -458,17 +458,35 @@ export async function upsertCategoryAccess(userId: string, categoryId: string, s
 
 // Test Access Management
 export async function fetchTestAccess(): Promise<TestAccess[]> {
-  const { data, error } = await supabase.from('test_access').select('*');
-  if (error) throw error;
-  return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
+  try {
+    const { data, error } = await supabase.from('test_access').select('*');
+    if (error) {
+      console.log('test_access table not found, using fallback');
+      return []; // Return empty array if table doesn't exist
+    }
+    return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
+  } catch (error) {
+    console.log('Error fetching test access, using fallback:', error);
+    return [];
+  }
 }
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {
-  const { data, error } = await supabase
-    .from('test_access')
-    .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
-    .select()
-    .single();
-  if (error) throw error;
-  return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
+  try {
+    const { data, error } = await supabase
+      .from('test_access')
+      .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error with test_access table:', error);
+      throw new Error(`test_access table not found. Please run the database migration. Error: ${error.message}`);
+    }
+    
+    return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
+  } catch (error) {
+    console.error('Failed to upsert test access:', error);
+    throw error;
+  }
 }
