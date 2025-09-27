@@ -58,6 +58,11 @@ const TestScreen: React.FC = () => {
   });
   const [currentPage, setCurrentPage] = useState(0);
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   // Tab switching and visibility protection
   useEffect(() => {
     const handleVisibilityChange = () => {
