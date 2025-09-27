@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 // FIX: The useAppContext hook is exported from 'hooks/useAppContext', not from the context file.
 import { useAppContext } from '../hooks/useAppContext';
-import { PlusIcon, EditIcon, TrashIcon, UserIcon, ChevronRightIcon, LockIcon, LockKeyholeOpenIcon } from './icons';
+import { PlusIcon, EditIcon, TrashIcon, UserIcon, ChevronRightIcon, LockIcon } from './icons';
 import * as supabaseService from '../services/supabaseService';
 import type { Category, Test, Question, User, TestAccess } from '../types';
 
@@ -12,11 +12,15 @@ type AdminView = 'categories' | 'tests' | 'questions' | 'users';
 const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ isOpen, onClose, title, children }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">{title}</h3>
-                    <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:hover:text-white">&times;</button>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">{title}</h3>
+                    <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:hover:text-white p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
                 {children}
             </div>
@@ -46,6 +50,12 @@ const AdminDashboard: React.FC = () => {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [historyUser, setHistoryUser] = useState<User | null>(null);
+  
+  // Test Access Management
+  const [showTestAccessModal, setShowTestAccessModal] = useState(false);
+  const [testAccessSearch, setTestAccessSearch] = useState('');
+  const [testAccessPage, setTestAccessPage] = useState(0);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   // Pending UI intents to coordinate cross-view actions
   const [pendingOpenTestModal, setPendingOpenTestModal] = useState(false);
   const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null);
@@ -118,26 +128,31 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Categories</h2>
-                <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"><PlusIcon/> <span>Add Category</span></button>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Manage Categories</h2>
+                <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-indigo-700 transition-colors w-full sm:w-auto">
+                    <PlusIcon className="w-4 h-4"/> 
+                    <span>Add Category</span>
+                </button>
             </div>
             
-            <ul className="space-y-2">
+            <ul className="space-y-3">
                 {filteredCategories.map(cat => (
-                    <li key={cat.id} className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center">
-                        <div>
-                            <p className="font-medium text-slate-900 dark:text-white">{cat.name}</p>
+                    <li key={cat.id} className="bg-slate-100 dark:bg-slate-700 p-4 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                        <div className="flex-1">
+                            <p className="font-medium text-slate-900 dark:text-white text-lg">{cat.name}</p>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{state.tests.filter(t => t.categoryId === cat.id).length} tests</p>
                         </div>
-                        <div className="space-x-2">
+                        <div className="flex flex-wrap gap-2 sm:gap-2">
                             <button 
                                 onClick={() => { setViewingCategoryTests(cat); setTestSearch(''); }} 
-                                className="text-indigo-500 hover:text-indigo-700 text-sm px-2 py-1"
+                                className="text-indigo-500 hover:text-indigo-700 text-sm px-3 py-1 rounded-md border border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                             >
                                 View Tests
                             </button>
-                            <button onClick={() => openModal(cat)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
+                            <button onClick={() => openModal(cat)} className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                <EditIcon className="w-4 h-4" />
+                            </button>
                             <button 
                               onClick={async () => {
                                 try {
@@ -147,9 +162,9 @@ const AdminDashboard: React.FC = () => {
                                   console.error('Error deleting category:', error);
                                 }
                               }} 
-                              className="text-red-500 hover:text-red-700"
+                              className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
-                              <TrashIcon />
+                              <TrashIcon className="w-4 h-4" />
                             </button>
                         </div>
                     </li>
@@ -164,8 +179,8 @@ const AdminDashboard: React.FC = () => {
             )}
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Category' : 'Add Category'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Category Name" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
-                    <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded-lg w-full">Save</button>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Category Name" className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base"/>
+                    <button type="submit" className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg w-full font-medium transition-colors">Save</button>
                 </form>
             </Modal>
         </div>
@@ -312,43 +327,50 @@ const AdminDashboard: React.FC = () => {
   const [accessPage, setAccessPage] = useState(0);
   const pageSize = 25;
   
-  // Test Access Management
-  const [showTestAccessModal, setShowTestAccessModal] = useState(false);
-  const [testAccessSearch, setTestAccessSearch] = useState('');
-  const [testAccessPage, setTestAccessPage] = useState(0);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set()); // For dropdown functionality
     const filteredCats = React.useMemo(()=> state.categories.filter(c=> c.name.toLowerCase().includes(accessSearch.toLowerCase())), [state.categories, accessSearch]);
     const pagedCats = React.useMemo(()=> filteredCats.slice(accessPage*pageSize, accessPage*pageSize+pageSize), [filteredCats, accessPage]);
 
     return (
       <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Users</h2>
-          <div className="space-x-2">
-            <button onClick={() => openUserModal(null)} className="bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700">Add User</button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Manage Users</h2>
+          <div className="w-full sm:w-auto">
+            <button onClick={() => openUserModal(null)} className="bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors w-full sm:w-auto flex items-center justify-center space-x-2">
+              <PlusIcon className="w-4 h-4" />
+              <span>Add User</span>
+            </button>
           </div>
         </div>
 
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {filteredUsers.map(u => (
-            <li key={u.id} className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center">
+            <li key={u.id} className="bg-slate-100 dark:bg-slate-700 p-4 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex-1">
-                <p className="font-medium text-slate-900 dark:text-white">{u.name} {u.isAdmin && <span className="ml-2 text-xs bg-indigo-600 text-white px-2 py-0.5 rounded">Admin</span>}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{u.email}</p>
-                <div className="mt-2 text-xs">
-                  <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-medium text-slate-900 dark:text-white text-lg">{u.name}</p>
+                  {u.isAdmin && <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full">Admin</span>}
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{u.email}</p>
+                <div className="text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <p className="text-slate-400">Category Access</p>
-                    <div className="space-x-3">
-                      <button onClick={()=>approveAllPending(u)} className="text-emerald-500 hover:underline">Approve All Pending</button>
-                      <button onClick={()=>{ setAccessForUser(u); setAccessSearch(''); setAccessPage(0); }} className="text-indigo-400 hover:underline">Manage…</button>
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={()=>approveAllPending(u)} className="text-emerald-500 hover:underline text-xs">Approve All Pending</button>
+                      <button onClick={()=>{ setAccessForUser(u); setAccessSearch(''); setAccessPage(0); }} className="text-indigo-400 hover:underline text-xs">Manage…</button>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="space-x-2">
-                <button onClick={() => openUserModal(u)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
-                <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                <button onClick={() => setHistoryUser(u)} className="text-slate-600 dark:text-slate-200 hover:text-slate-800 dark:hover:text-white text-sm border border-slate-400 dark:border-slate-500 px-2 py-0.5 rounded">View History</button>
+              <div className="flex flex-wrap gap-2 sm:gap-2">
+                <button onClick={() => openUserModal(u)} className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                  <EditIcon className="w-4 h-4" />
+                </button>
+                <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+                <button onClick={() => setHistoryUser(u)} className="text-slate-600 dark:text-slate-200 hover:text-slate-800 dark:hover:text-white text-xs border border-slate-400 dark:border-slate-500 px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                  View History
+                </button>
               </div>
             </li>
           ))}
@@ -356,13 +378,16 @@ const AdminDashboard: React.FC = () => {
 
         <Modal isOpen={isUserModalOpen} onClose={closeUserModal} title={editingUser ? 'Edit User' : 'Add User'}>
           <form onSubmit={handleSave} className="space-y-4">
-            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400" />
-            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400" />
-            <input type="text" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Password" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400" />
-            <label className="flex items-center space-x-2 text-slate-800 dark:text-white"><input type="checkbox" checked={form.isAdmin} onChange={e => setForm({ ...form, isAdmin: e.target.checked })} /> <span>Admin</span></label>
-                    <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded-lg w-full">Save</button>
-                </form>
-            </Modal>
+            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name" className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" />
+            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" />
+            <input type="text" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Password" className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" />
+            <label className="flex items-center space-x-2 text-slate-800 dark:text-white p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+              <input type="checkbox" checked={form.isAdmin} onChange={e => setForm({ ...form, isAdmin: e.target.checked })} className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" /> 
+              <span>Admin</span>
+            </label>
+            <button type="submit" className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg w-full font-medium transition-colors">Save</button>
+          </form>
+        </Modal>
         {/* History Modal */}
         <Modal isOpen={!!historyUser} onClose={() => setHistoryUser(null)} title={`History – ${historyUser?.name || ''}`}>
           <div className="max-h-[28rem] overflow-auto pr-2 custom-scroll">
@@ -417,7 +442,7 @@ const AdminDashboard: React.FC = () => {
                           // Toggle access for all users
                           state.users.forEach(user => {
                             if (!user.isAdmin) {
-                              toggleTestAccess(user.id, test.id);
+                              toggleTestAccess(user, test, 'approved');
                             }
                           });
                         }}
@@ -626,28 +651,37 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Tests</h2>
-                <div className="flex space-x-2">
-                    <button onClick={() => setShowTestAccessModal(true)} className="bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-purple-700">
-                        <LockIcon className="w-4 h-4"/> <span>Manage Test Access</span>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Manage Tests</h2>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
+                    <button onClick={() => setShowTestAccessModal(true)} className="bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-purple-700 transition-colors w-full sm:w-auto">
+                        <LockIcon className="w-4 h-4"/> 
+                        <span>Manage Test Access</span>
                     </button>
-                <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"><PlusIcon/> <span>Add Test</span></button>
+                    <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-indigo-700 transition-colors w-full sm:w-auto">
+                        <PlusIcon className="w-4 h-4"/> 
+                        <span>Add Test</span>
+                    </button>
                 </div>
             </div>
             
-            {/* Search bar */}
-            <ul className="space-y-2">
+            <ul className="space-y-3">
                 {filteredTests.map(test => (
-                    <li key={test.id} className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center">
-                        <div>
-                            <p className="font-medium text-slate-900 dark:text-white">{test.title}</p>
+                    <li key={test.id} className="bg-slate-100 dark:bg-slate-700 p-4 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                        <div className="flex-1">
+                            <p className="font-medium text-slate-900 dark:text-white text-lg">{test.title}</p>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{state.categories.find(c => c.id === test.categoryId)?.name} • {state.questions.filter(q => q.testId === test.id).length} questions</p>
                         </div>
-                        <div className="space-x-2">
-                           <button onClick={() => { setSelectedTestForQuestions(test); setCurrentView('questions'); }} className="text-blue-500 hover:text-blue-700">Manage Questions</button>
-                            <button onClick={() => openModal(test)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
-                            <button onClick={() => dispatch({type: 'DELETE_TEST', payload: test.id})} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
+                        <div className="flex flex-wrap gap-2 sm:gap-2">
+                           <button onClick={() => { setSelectedTestForQuestions(test); setCurrentView('questions'); }} className="text-blue-500 hover:text-blue-700 text-sm px-3 py-1 rounded-md border border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                               Manage Questions
+                           </button>
+                            <button onClick={() => openModal(test)} className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                <EditIcon className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => dispatch({type: 'DELETE_TEST', payload: test.id})} className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                <TrashIcon className="w-4 h-4" />
+                            </button>
                         </div>
                     </li>
                 ))}
@@ -728,6 +762,7 @@ const AdminDashboard: React.FC = () => {
                 // Ensure all fields are filled
                 if (values[0] && values[1] && values[2] && values[3] && values[4]) {
                     questions.push({
+                        id: '', // Will be generated by the backend
                         testId: selectedTestForQuestions!.id,
                         questionText: values[0],
                         options: [values[1], values[2], values[3], values[4]],
@@ -763,6 +798,7 @@ const AdminDashboard: React.FC = () => {
                 const parsed = JSON.parse(content);
                 if (Array.isArray(parsed)) {
                     questions = parsed.map((q: any) => ({
+                        id: '', // Will be generated by the backend
                         testId: selectedTestForQuestions!.id,
                         questionText: q.questionText || '',
                         options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
@@ -1011,22 +1047,22 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
-      <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-6">Admin Panel</h1>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 mb-6">
-        <div className="flex">
-          <button onClick={() => { setCurrentView('categories'); setViewingCategoryTests(null); }} className={`py-2 px-4 ${currentView === 'categories' && !viewingCategoryTests ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500'}`}>Categories</button>
-          <button onClick={() => { setCurrentView('tests'); setViewingCategoryTests(null); }} className={`py-2 px-4 ${currentView === 'tests' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500'}`}>Tests</button>
-          <button onClick={() => { setCurrentView('users'); setViewingCategoryTests(null); }} className={`py-2 px-4 ${currentView === 'users' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500'}`}>Users</button>
+    <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-md">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-6">Admin Panel</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 dark:border-slate-700 mb-6 gap-4">
+        <div className="flex flex-wrap gap-1 sm:gap-0">
+          <button onClick={() => { setCurrentView('categories'); setViewingCategoryTests(null); }} className={`py-2 px-3 sm:px-4 text-sm sm:text-base ${currentView === 'categories' && !viewingCategoryTests ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Categories</button>
+          <button onClick={() => { setCurrentView('tests'); setViewingCategoryTests(null); }} className={`py-2 px-3 sm:px-4 text-sm sm:text-base ${currentView === 'tests' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Tests</button>
+          <button onClick={() => { setCurrentView('users'); setViewingCategoryTests(null); }} className={`py-2 px-3 sm:px-4 text-sm sm:text-base ${currentView === 'users' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Users</button>
         </div>
-        <div className="w-64 pb-2">
+        <div className="w-full sm:w-64 pb-2">
           {viewingCategoryTests ? (
             <input 
               type="text" 
               placeholder={`Search tests in ${viewingCategoryTests.name}...`} 
               value={testSearch}
               onChange={(e) => setTestSearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
+              className="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base"
             />
           ) : currentView === 'categories' ? (
             <input 
@@ -1034,7 +1070,7 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search categories..." 
               value={categorySearch}
               onChange={(e) => setCategorySearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
+              className="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base"
             />
           ) : currentView === 'tests' ? (
             <input 
@@ -1042,7 +1078,7 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search tests by title or category..." 
               value={testSearch}
               onChange={(e) => setTestSearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
+              className="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base"
             />
           ) : (
             <input 
@@ -1050,7 +1086,7 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search users by name or email..." 
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
-              className="w-full p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"
+              className="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base"
             />
           )}
         </div>
