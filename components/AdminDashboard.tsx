@@ -268,16 +268,31 @@ const AdminDashboard: React.FC = () => {
 
   const toggleTestAccess = async (u: User, test: Test, status: 'approved' | 'locked') => {
     try {
-      console.log('FRESH: Admin toggling test access:', { userId: u.id, testId: test.id, status });
-      await supabaseService.upsertTestAccess(u.id, test.id, status);
+      console.log('FRESH: Admin toggling test access:', { 
+        userId: u.id, 
+        testId: test.id, 
+        status,
+        userString: String(u.id),
+        testString: String(test.id)
+      });
+      
+      const result = await supabaseService.upsertTestAccess(u.id, test.id, status);
+      console.log('FRESH: upsertTestAccess result:', result);
+      
       if (status === 'approved') {
         await supabaseService.createNotification(u.id, 'Test approved', `You can now access ${test.title}.`);
       } else {
         await supabaseService.createNotification(u.id, 'Test locked', `${test.title} has been locked.`);
       }
+      
       const updatedAccess = await supabaseService.fetchTestAccess();
       dispatch({ type: 'SET_TEST_ACCESS', payload: updatedAccess } as any);
       console.log('FRESH: Admin updated test access:', updatedAccess);
+      
+      // Also log what's in localStorage directly
+      const localStorageData = localStorage.getItem('test_access');
+      console.log('FRESH: localStorage data after update:', localStorageData);
+      
     } catch (error) {
       console.error('FRESH: Failed to update test access:', error);
       alert('Failed to update test access');

@@ -39,6 +39,11 @@ const CategorySelector: React.FC = () => {
         const updated = await supabaseService.fetchTestAccess();
         dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
         console.log('FRESH: Refreshed test access data:', updated);
+        
+        // Also log localStorage directly
+        const localStorageData = localStorage.getItem('test_access');
+        console.log('FRESH: localStorage data on user side:', localStorageData);
+        
       } catch (error) {
         console.error('FRESH: Failed to refresh test access:', error);
       }
