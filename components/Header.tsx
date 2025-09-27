@@ -80,28 +80,51 @@ const Header: React.FC = () => {
                       setItems(prev=> prev.map(p=> ({...p, is_read: true})));
                     } catch {}
                   }
-                }} title="Notifications" className="relative text-white/80 hover:text-white">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/></svg>
-                {items.some(i=>!i.is_read) && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"/>}
+                }} title="Notifications" className="relative text-white/80 hover:text-white p-2 rounded-lg hover:bg-slate-700 transition-colors">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/></svg>
+                {items.some(i=>!i.is_read) && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"/>}
               </button>
               {open && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-h-96 overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
-                  <div className="px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700">Notifications</div>
-                  {items.length === 0 ? (
-                    <div className="p-3 text-sm text-slate-500">No notifications</div>
-                  ) : items.map(n => (
-                    <div key={n.id} className="p-3 border-b dark:border-slate-700 flex items-start gap-2">
-                      <svg className={`w-4 h-4 mt-1 ${n.is_read ? 'text-green-500' : 'text-slate-400'}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414l2.293 2.293 6.543-6.543a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-900 dark:text-white font-medium">{n.title}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{n.message}</p>
-                        <p className="text-[11px] text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
-                      </div>
+                <>
+                  {/* Backdrop for mobile */}
+                  <div 
+                    className="fixed inset-0 bg-black bg-opacity-25 z-40 sm:hidden"
+                    onClick={() => setOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50">
+                    <div className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700 flex items-center justify-between">
+                      <span>Notifications</span>
+                      <button 
+                        onClick={() => setOpen(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </button>
                     </div>
-                  ))}
-                </div>
+                    {items.length === 0 ? (
+                      <div className="p-4 text-sm text-slate-500 text-center">No notifications</div>
+                    ) : (
+                      <div className="max-h-80 overflow-y-auto">
+                        {items.map(n => (
+                          <div key={n.id} className="p-4 border-b dark:border-slate-700 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <div className="flex-shrink-0 mt-0.5">
+                              <svg className={`w-4 h-4 ${n.is_read ? 'text-green-500' : 'text-slate-400'}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414l2.293 2.293 6.543-6.543a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-900 dark:text-white font-medium leading-tight">{n.title}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{n.message}</p>
+                              <p className="text-[11px] text-slate-400 mt-2">{new Date(n.created_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
