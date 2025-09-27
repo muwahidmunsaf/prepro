@@ -456,23 +456,34 @@ export async function upsertCategoryAccess(userId: string, categoryId: string, s
   return { id: data.id.toString(), userId: data.user_id.toString(), categoryId: data.category_id.toString(), status: data.status, updatedAt: data.updated_at };
 }
 
-// FRESH TEST ACCESS MANAGEMENT - COMPLETELY NEW APPROACH
+// ULTRA FRESH TEST ACCESS MANAGEMENT - CLEAR EVERYTHING AND START NEW
 export async function fetchTestAccess(): Promise<TestAccess[]> {
-  // Always use localStorage for now - no database dependency
+  // Clear any old localStorage keys first
+  const oldKeys = ['test_access_data', 'global_test_access'];
+  oldKeys.forEach(key => {
+    if (localStorage.getItem(key)) {
+      localStorage.removeItem(key);
+      console.log('ULTRA FRESH: Removed old key:', key);
+    }
+  });
+  
+  // Use only the new key
   const data = localStorage.getItem('test_access');
   if (!data) return [];
   
   try {
     const parsed = JSON.parse(data);
-    console.log('FRESH: Loaded test access:', parsed);
+    console.log('ULTRA FRESH: Loaded test access:', parsed);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error('FRESH: Error parsing test access:', error);
+    console.error('ULTRA FRESH: Error parsing test access:', error);
     return [];
   }
 }
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {
+  console.log('ULTRA FRESH: Upserting test access:', { userId, testId, status });
+  
   const testAccessData = {
     id: `test_${Date.now()}`,
     userId: String(userId),
@@ -481,10 +492,9 @@ export async function upsertTestAccess(userId: string, testId: string, status: T
     updatedAt: new Date().toISOString()
   };
   
-  console.log('FRESH: Upserting test access:', testAccessData);
-  
   // Get current data
   const currentData = await fetchTestAccess();
+  console.log('ULTRA FRESH: Current data before update:', currentData);
   
   // Remove any existing entry for this user+test combination
   const filteredData = currentData.filter(item => 
@@ -496,7 +506,31 @@ export async function upsertTestAccess(userId: string, testId: string, status: T
   
   // Save back to localStorage
   localStorage.setItem('test_access', JSON.stringify(filteredData));
-  console.log('FRESH: Saved test access data:', filteredData);
+  console.log('ULTRA FRESH: Saved test access data:', filteredData);
+  
+  // Verify it was saved correctly
+  const verifyData = localStorage.getItem('test_access');
+  console.log('ULTRA FRESH: Verification - localStorage contains:', verifyData);
   
   return testAccessData;
+}
+
+// Function to completely clear all test access data
+export function clearAllTestAccessData(): void {
+  const keysToRemove = ['test_access', 'test_access_data', 'global_test_access'];
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key);
+    console.log('ULTRA FRESH: Cleared key:', key);
+  });
+  
+  // Also clear any individual test access keys
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('test_access_')) {
+      localStorage.removeItem(key);
+      console.log('ULTRA FRESH: Cleared individual key:', key);
+    }
+  }
+  
+  console.log('ULTRA FRESH: All test access data cleared');
 }
