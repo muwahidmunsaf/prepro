@@ -88,15 +88,21 @@ const Header: React.FC = () => {
                 <>
                   {/* Backdrop for mobile */}
                   <div 
-                    className="fixed inset-0 bg-black bg-opacity-25 z-40 sm:hidden"
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
                     onClick={() => setOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-6rem)] overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 transform translate-x-0">
-                    <div className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700 flex items-center justify-between">
-                      <span>Notifications</span>
+                  <div className="absolute right-0 mt-2 w-80 sm:w-80 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-6rem)] overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 transform translate-x-0 sm:translate-x-0">
+                    <div className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 rounded-t-xl">
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/>
+                        </svg>
+                        Notifications
+                        {items.some(i=>!i.is_read) && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{items.filter(i=>!i.is_read).length}</span>}
+                      </span>
                       <button 
                         onClick={() => setOpen(false)}
-                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -104,20 +110,23 @@ const Header: React.FC = () => {
                       </button>
                     </div>
                     {items.length === 0 ? (
-                      <div className="p-4 text-sm text-slate-500 text-center">No notifications</div>
+                      <div className="p-6 text-center">
+                        <svg className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/>
+                        </svg>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">No notifications yet</p>
+                      </div>
                     ) : (
-                      <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
+                      <div className="max-h-[calc(100vh-14rem)] sm:max-h-[calc(100vh-12rem)] overflow-y-auto">
                         {items.map(n => (
-                          <div key={n.id} className="p-3 border-b dark:border-slate-700 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                            <div className="flex-shrink-0 mt-0.5">
-                              <svg className={`w-4 h-4 ${n.is_read ? 'text-green-500' : 'text-slate-400'}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414l2.293 2.293 6.543-6.543a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
+                          <div key={n.id} className="p-4 border-b dark:border-slate-700 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors last:border-b-0">
+                            <div className="flex-shrink-0 mt-1">
+                              <div className={`w-3 h-3 rounded-full ${n.is_read ? 'bg-green-500' : 'bg-blue-500'}`}></div>
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-slate-900 dark:text-white font-medium leading-tight">{n.title}</p>
                               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed break-words">{n.message}</p>
-                              <p className="text-[11px] text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">{new Date(n.created_at).toLocaleString()}</p>
                             </div>
                           </div>
                         ))}

@@ -181,70 +181,89 @@ const TestScreen: React.FC = () => {
   const currentQuestions = testQuestions.slice(startIndex, startIndex + QUESTIONS_PER_PAGE);
 
   return (
-    <div className="max-w-5xl mx-auto relative">
+    <div className="max-w-5xl mx-auto relative p-4 sm:p-6">
         {(isPaused || endedForCheating || showConfirm || showSubmitConfirm) && (
-            <div className="fixed inset-0 bg-slate-900 bg-opacity-80 flex flex-col items-center justify-center z-50">
-                {showSubmitConfirm ? (
-                    <>
-                      <h2 className="text-3xl font-bold text-white mb-2">Submit Test?</h2>
-                      <p className="text-slate-200 mb-6 text-center max-w-md">Are you sure you want to end and submit the test?</p>
-                      <div className="flex gap-3">
-                        <button onClick={()=>{ confirmSubmit(); setShowSubmitConfirm(false); }} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Submit</button>
-                        <button onClick={()=> setShowSubmitConfirm(false)} className="bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold py-2 px-6 rounded-lg">Cancel</button>
-                      </div>
-                    </>
-                ) : showConfirm ? (
-                    <>
-                      <h2 className="text-3xl font-bold text-white mb-2">{showConfirm.title}</h2>
-                      <p className="text-slate-200 mb-6 text-center max-w-md">{showConfirm.message}</p>
-                      <div className="flex gap-3">
-                        <button onClick={()=>{ showConfirm.onConfirm(); setShowConfirm(null); }} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">End Test</button>
-                        <button onClick={()=>{ setShowConfirm(null); setIsPaused(false); }} className="bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold py-2 px-6 rounded-lg">Continue</button>
-                      </div>
-                    </>
-                ) : endedForCheating ? (
-                    <>
-                        <h2 className="text-4xl font-bold text-red-500 mb-2">Test Ended</h2>
-                        <p className="text-white text-lg mb-6">Due to tab/window switching, your test has been ended.</p>
-                        <button onClick={() => { navigate('/dashboard'); window.scrollTo(0, 0); }} className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg text-lg">Go to Dashboard</button>
-                    </>
-                ) : (
-                    <>
-                <h2 className="text-4xl font-bold text-white mb-4">Test Paused</h2>
-                        <div className="flex gap-3">
-                          <button onClick={() => { setIsPaused(false); setIsPausedByUser(false); }} className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-lg">Resume Test</button>
-                          <button onClick={() => { navigate('/dashboard'); window.scrollTo(0, 0); }} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-lg text-lg">Go to Dashboard</button>
-                        </div>
-                    </>
-                )}
-            </div>
-        )}
-        <div className={`bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg ${(isPaused || endedForCheating || showConfirm || showSubmitConfirm) ? 'blur-sm pointer-events-none' : ''}`}>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-200 dark:border-slate-700 pb-4 mb-6 gap-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">{test.title}</h1>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                    <Timer duration={test.duration} onTimeUp={confirmSubmit} isPaused={isPaused || !!showConfirm || showSubmitConfirm} initialSeconds={timeLeft} onTick={setTimeLeft} />
-                    {!endedForCheating && (
-                      <button onClick={() => { 
-                        setIsPaused(true); 
-                        setIsPausedByUser(true);
-                        // Immediately save session when paused
-                        if (state.currentUser && testId) {
-                          const key = `pp_session_${state.currentUser.id}_${testId}`;
-                          const payload = { userAnswers, timeLeft, stableQuestions, endedForCheating: false, isPaused: true };
-                          try { localStorage.setItem(key, JSON.stringify(payload)); } catch {}
-                        }
-                      }} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base">Pause</button>
+            <div className="fixed inset-0 bg-slate-900 bg-opacity-90 flex flex-col items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 sm:p-8 max-w-md w-full">
+                    {showSubmitConfirm ? (
+                        <>
+                          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-3">Submit Test?</h2>
+                          <p className="text-slate-600 dark:text-slate-300 mb-6 text-center">Are you sure you want to end and submit the test?</p>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <button onClick={()=>{ confirmSubmit(); setShowSubmitConfirm(false); }} className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">Submit</button>
+                            <button onClick={()=> setShowSubmitConfirm(false)} className="bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-3 px-6 rounded-lg transition-colors">Cancel</button>
+                          </div>
+                        </>
+                    ) : showConfirm ? (
+                        <>
+                          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-3">{showConfirm.title}</h2>
+                          <p className="text-slate-600 dark:text-slate-300 mb-6 text-center">{showConfirm.message}</p>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <button onClick={()=>{ showConfirm.onConfirm(); setShowConfirm(null); }} className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">End Test</button>
+                            <button onClick={()=>{ setShowConfirm(null); setIsPaused(false); }} className="bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-3 px-6 rounded-lg transition-colors">Continue</button>
+                          </div>
+                        </>
+                    ) : endedForCheating ? (
+                        <>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-red-500 mb-3">Test Ended</h2>
+                            <p className="text-slate-600 dark:text-slate-300 mb-6 text-center">Due to tab/window switching, your test has been ended.</p>
+                            <button onClick={() => { navigate('/dashboard'); window.scrollTo(0, 0); }} className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">Go to Dashboard</button>
+                        </>
+                    ) : (
+                        <>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-4">Test Paused</h2>
+                            <div className="flex flex-col gap-3">
+                              <button onClick={() => { setIsPaused(false); setIsPausedByUser(false); }} className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">Resume Test</button>
+                              <button onClick={() => { navigate('/dashboard'); window.scrollTo(0, 0); }} className="bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">Go to Dashboard</button>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
+        )}
+        <div className={`bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-lg ${(isPaused || endedForCheating || showConfirm || showSubmitConfirm) ? 'blur-sm pointer-events-none' : ''}`}>
+            <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-700 pb-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">{test.title}</h1>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <Timer duration={test.duration} onTimeUp={confirmSubmit} isPaused={isPaused || !!showConfirm || showSubmitConfirm} initialSeconds={timeLeft} onTick={setTimeLeft} />
+                        {!endedForCheating && (
+                          <button onClick={() => { 
+                            setIsPaused(true); 
+                            setIsPausedByUser(true);
+                            // Immediately save session when paused
+                            if (state.currentUser && testId) {
+                              const key = `pp_session_${state.currentUser.id}_${testId}`;
+                              const payload = { userAnswers, timeLeft, stableQuestions, endedForCheating: false, isPaused: true };
+                              try { localStorage.setItem(key, JSON.stringify(payload)); } catch {}
+                            }
+                          }} className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg text-sm sm:text-base transition-colors flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Pause
+                          </button>
+                        )}
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">Total Questions: {testQuestions.length}</span>
+                    <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">Duration: {test.duration} minutes</span>
+                    <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">Page {currentPage + 1} of {totalPages}</span>
+                </div>
+            </div>
 
-            <div>
+            <div className="space-y-8">
             {currentQuestions.map((q, index) => (
-                <div key={q.id} className="mb-8">
-                <p className="font-semibold text-base sm:text-lg text-slate-800 dark:text-slate-100 mb-4">
-                    {startIndex + index + 1}. {q.questionText}
-                </p>
+                <div key={q.id} className="bg-slate-50 dark:bg-slate-700/50 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600">
+                <div className="flex items-start gap-3 mb-4">
+                    <span className="bg-indigo-500 text-white text-sm font-bold px-3 py-1 rounded-full flex-shrink-0">
+                        {startIndex + index + 1}
+                    </span>
+                    <p className="font-semibold text-base sm:text-lg text-slate-800 dark:text-slate-100 leading-relaxed">
+                        {q.questionText}
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 gap-3">
                     {q.options.map((option, optIndex) => {
                     const userAnswer = userAnswers.find(a => a.questionId === q.id);
@@ -253,13 +272,22 @@ const TestScreen: React.FC = () => {
                         <button
                         key={optIndex}
                         onClick={() => handleAnswerSelect(q.id, optIndex)}
-                        className={`w-full text-left p-3 border rounded-lg transition-colors ${
+                        className={`w-full text-left p-4 border-2 rounded-xl transition-all duration-200 ${
                             isSelected
-                            ? 'bg-indigo-100 dark:bg-indigo-900 border-indigo-500 ring-2 ring-indigo-500'
-                            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
+                            ? 'bg-indigo-100 dark:bg-indigo-900 border-indigo-500 ring-2 ring-indigo-500 shadow-md'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'
                         }`}
                         >
-                        <span className="font-medium text-slate-700 dark:text-slate-200">{String.fromCharCode(65 + optIndex)}. {option}</span>
+                        <div className="flex items-center gap-3">
+                            <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
+                                isSelected 
+                                ? 'bg-indigo-500 border-indigo-500 text-white' 
+                                : 'border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-400'
+                            }`}>
+                                {String.fromCharCode(65 + optIndex)}
+                            </span>
+                            <span className="font-medium text-slate-700 dark:text-slate-200">{option}</span>
+                        </div>
                         </button>
                     );
                     })}
@@ -268,28 +296,44 @@ const TestScreen: React.FC = () => {
             ))}
             </div>
             
-            <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex space-x-2 order-2 sm:order-1">
-                    {currentPage > 0 && (
-                    <button onClick={() => setCurrentPage(p => p - 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm sm:text-base">
-                        Previous
-                    </button>
-                    )}
-                    {currentPage < totalPages - 1 && (
-                    <button onClick={() => setCurrentPage(p => p + 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm sm:text-base">
-                        Next
-                    </button>
-                    )}
-                </div>
-                
-                <p className="text-sm text-slate-500 order-1 sm:order-2">Page {currentPage + 1} of {totalPages}</p>
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="flex gap-2 order-2 sm:order-1">
+                        {currentPage > 0 && (
+                        <button onClick={() => setCurrentPage(p => p - 1)} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-3 px-6 rounded-lg text-sm sm:text-base transition-colors flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Previous
+                        </button>
+                        )}
+                        {currentPage < totalPages - 1 && (
+                        <button onClick={() => setCurrentPage(p => p + 1)} className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg text-sm sm:text-base transition-colors flex items-center gap-2">
+                            Next
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                        )}
+                    </div>
+                    
+                    <div className="text-center order-1 sm:order-2">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Page {currentPage + 1} of {totalPages}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                            {userAnswers.filter(a => a.selectedAnswer !== null).length} of {testQuestions.length} answered
+                        </p>
+                    </div>
 
-                <button
-                    onClick={handleSubmit}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg text-sm sm:text-base order-3"
-                >
-                    End & Submit Test
-                </button>
+                    <button
+                        onClick={handleSubmit}
+                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg text-sm sm:text-base transition-colors order-3 flex items-center gap-2"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        End & Submit Test
+                    </button>
+                </div>
             </div>
         </div>
     </div>

@@ -975,17 +975,23 @@ const AdminDashboard: React.FC = () => {
 
     return (
       <div>
-        <div className="flex justify-between items-start mb-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+          <div className="flex-1">
             <button 
               onClick={() => setViewingCategoryTests(null)} 
-              className="text-indigo-600 hover:text-indigo-800 mb-2"
+              className="text-indigo-600 hover:text-indigo-800 mb-3 flex items-center gap-2 transition-colors"
             >
-              &larr; Back to Categories
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              Back to Categories
             </button>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-2">
               Tests for "{viewingCategoryTests?.name}"
             </h2>
+            <p className="text-slate-600 dark:text-slate-400">
+              Manage and organize tests within this category
+            </p>
           </div>
           <button 
             onClick={() => {
@@ -996,45 +1002,106 @@ const AdminDashboard: React.FC = () => {
               setViewingCategoryTests(null);
               setCurrentView('tests');
             }} 
-            className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"
+            className="bg-indigo-600 text-white py-3 px-6 rounded-lg flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors font-semibold w-full sm:w-auto"
           >
-            <PlusIcon/> <span>Add Test to This Category</span>
+            <PlusIcon/> 
+            <span>Add Test to This Category</span>
           </button>
         </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search tests in this category..."
+            value={testSearch}
+            onChange={(e) => setTestSearch(e.target.value)}
+            className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base dark:bg-slate-700 dark:text-white"
+          />
+        </div>
         
-        <ul className="space-y-2">
+        <div className="space-y-4">
           {filteredTestsForCategory.map(test => (
-            <li key={test.id} className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center">
-              <div>
-                <p className="font-medium text-slate-900 dark:text-white">{test.title}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Duration: {test.duration} mins • Questions: {test.totalQuestions}</p>
+            <div key={test.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{test.title}</h3>
+                  <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-400">
+                    <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
+                      Duration: {test.duration} mins
+                    </span>
+                    <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
+                      Questions: {test.totalQuestions}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  <button 
+                    onClick={() => { 
+                      // Remember which category we came from so back button returns to that filtered view
+                      if (viewingCategoryTests) setPreviousCategoryIdForQuestions(viewingCategoryTests.id);
+                      setViewingCategoryTests(null); 
+                      setSelectedTestForQuestions(test); 
+                      setCurrentView('questions'); 
+                    }} 
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Manage Questions
+                  </button>
+                  <button 
+                    onClick={() => openModal(test)} 
+                    className="bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors"
+                    title="Edit Test"
+                  >
+                    <EditIcon />
+                  </button>
+                  <button 
+                    onClick={() => dispatch({type: 'DELETE_TEST', payload: test.id})} 
+                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                    title="Delete Test"
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
               </div>
-              <div className="space-x-2">
-                <button onClick={() => { 
-                  // Remember which category we came from so back button returns to that filtered view
-                  if (viewingCategoryTests) setPreviousCategoryIdForQuestions(viewingCategoryTests.id);
-                  setViewingCategoryTests(null); 
-                  setSelectedTestForQuestions(test); 
-                  setCurrentView('questions'); 
-                }} className="text-blue-500 hover:text-blue-700">Manage Questions</button>
-                <button onClick={() => openModal(test)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
-                <button onClick={() => dispatch({type: 'DELETE_TEST', payload: test.id})} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-              </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
         
         {/* No results message */}
         {filteredTestsForCategory.length === 0 && testSearch && (
-          <div className="text-center py-8 text-gray-500">
-            No tests found matching "{testSearch}" in this category
+          <div className="text-center py-12">
+            <svg className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <h3 className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-2">No tests found</h3>
+            <p className="text-slate-500 dark:text-slate-500">No tests found matching "{testSearch}" in this category</p>
           </div>
         )}
         
         {/* Nothing found in category message */}
         {filteredTestsForCategory.length === 0 && !testSearch && (
-          <div className="text-center py-8 text-gray-500">
-            No tests found in this category. Add a test to get started!
+          <div className="text-center py-12">
+            <svg className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-2">No tests yet</h3>
+            <p className="text-slate-500 dark:text-slate-500 mb-4">No tests found in this category. Add a test to get started!</p>
+            <button 
+              onClick={() => {
+                setPendingCategoryId(viewingCategoryTests!.id);
+                setReturnToCategoryIdOnClose(viewingCategoryTests!.id);
+                setPendingOpenTestModal(true);
+                setViewingCategoryTests(null);
+                setCurrentView('tests');
+              }} 
+              className="bg-indigo-600 text-white py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              Add First Test
+            </button>
           </div>
         )}
 
