@@ -2,6 +2,8 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
 import { CheckCircleIcon, XCircleIcon } from './icons';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const ResultsPage: React.FC = () => {
   const { resultId } = useParams<{ resultId: string }>();
@@ -22,88 +24,119 @@ const ResultsPage: React.FC = () => {
     window.print();
   };
 
-  const handleDownloadPDF = () => {
-    // Create a new window for PDF generation
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+  const handleDownloadPDF = async () => {
+    try {
+      // Get the print container element
+      const element = document.querySelector('.print-container') as HTMLElement;
+      if (!element) return;
 
-    // Get the current content
-    const printContent = document.querySelector('.print-container')?.innerHTML;
-    if (!printContent) return;
-
-    // Create the PDF content
-    const pdfContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>PrepPro Test Questions - ${test.title}</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 20px; 
-              color: #000; 
-              background: #fff;
-            }
-            .print-only-block { display: block !important; }
-            .no-print { display: none !important; }
-            .print-container { max-width: none !important; }
-            .print-container > div { box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
-            .print-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-            .print-correct { background-color: #dcfce7 !important; border-color: #16a34a !important; }
-            .print-correct span { color: #16a34a !important; }
-            .print-question { page-break-inside: avoid; margin-bottom: 12px !important; padding: 8px !important; }
-            .print-question p { margin-bottom: 8px !important; font-size: 14px !important; }
-            .print-option { padding: 4px 8px !important; margin-bottom: 2px !important; font-size: 12px !important; }
-            h1 { color: #000; font-size: 24px; margin-bottom: 20px; }
-            h3 { color: #000; font-size: 18px; margin-bottom: 15px; }
-            p { color: #000; margin-bottom: 10px; }
-            .border { border: 1px solid #ccc; }
-            .rounded-lg { border-radius: 4px; }
-            .bg-green-100 { background-color: #dcfce7; }
-            .border-green-300 { border-color: #16a34a; }
-            .text-green-600 { color: #16a34a; }
-            .font-semibold { font-weight: 600; }
-            .font-bold { font-weight: 700; }
-            .text-lg { font-size: 16px; }
-            .text-xs { font-size: 10px; }
-            .mb-3 { margin-bottom: 12px; }
-            .mb-8 { margin-bottom: 32px; }
-            .p-4 { padding: 16px; }
-            .p-3 { padding: 12px; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .items-center { align-items: center; }
-            .text-left { text-align: left; }
-            .grid { display: grid; }
-            .gap-2 { gap: 8px; }
-            .gap-3 { gap: 12px; }
-            .space-y-6 > * + * { margin-top: 24px; }
-            @media print {
-              body { margin: 0; }
-              .print-only-block { display: block !important; }
-              .no-print { display: none !important; }
-            }
-          </style>
-        </head>
-        <body>
-          ${printContent}
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(pdfContent);
-    printWindow.document.close();
-
-    // Wait for content to load, then trigger print
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print();
-        // Close the window after printing
-        setTimeout(() => {
-          printWindow.close();
-        }, 1000);
-      }, 500);
-    };
+      // Create a temporary container for PDF generation
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '800px';
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.padding = '20px';
+      tempContainer.style.fontFamily = 'Arial, sans-serif';
+      tempContainer.style.color = 'black';
+      
+      // Clone the content and modify for PDF
+      const clonedElement = element.cloneNode(true) as HTMLElement;
+      
+      // Hide elements that shouldn't be in PDF
+      const noPrintElements = clonedElement.querySelectorAll('.no-print');
+      noPrintElements.forEach(el => {
+        (el as HTMLElement).style.display = 'none';
+      });
+      
+      // Show print-only elements
+      const printOnlyElements = clonedElement.querySelectorAll('.print-only-block');
+      printOnlyElements.forEach(el => {
+        (el as HTMLElement).style.display = 'block';
+      });
+      
+      // Add PDF-specific styles
+      clonedElement.style.backgroundColor = 'white';
+      clonedElement.style.color = 'black';
+      clonedElement.style.maxWidth = 'none';
+      clonedElement.style.boxShadow = 'none';
+      clonedElement.style.borderRadius = '0';
+      
+      // Style questions for PDF
+      const questions = clonedElement.querySelectorAll('.print-question');
+      questions.forEach((q, index) => {
+        const questionEl = q as HTMLElement;
+        questionEl.style.pageBreakInside = 'avoid';
+        questionEl.style.marginBottom = '20px';
+        questionEl.style.padding = '15px';
+        questionEl.style.border = '1px solid #ddd';
+        questionEl.style.borderRadius = '8px';
+        
+        // Add question number
+        const questionNumber = document.createElement('div');
+        questionNumber.style.fontWeight = 'bold';
+        questionNumber.style.fontSize = '16px';
+        questionNumber.style.marginBottom = '10px';
+        questionNumber.style.color = '#333';
+        questionNumber.textContent = `Question ${index + 1}`;
+        questionEl.insertBefore(questionNumber, questionEl.firstChild);
+      });
+      
+      // Style correct answers
+      const correctAnswers = clonedElement.querySelectorAll('.print-correct');
+      correctAnswers.forEach(el => {
+        (el as HTMLElement).style.backgroundColor = '#dcfce7';
+        (el as HTMLElement).style.borderColor = '#16a34a';
+      });
+      
+      tempContainer.appendChild(clonedElement);
+      document.body.appendChild(tempContainer);
+      
+      // Generate canvas from the element
+      const canvas = await html2canvas(tempContainer, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 800,
+        height: tempContainer.scrollHeight
+      });
+      
+      // Remove temporary container
+      document.body.removeChild(tempContainer);
+      
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      let position = 0;
+      
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Download the PDF
+      const fileName = `PrepPro_Test_Questions_${test.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to print dialog
+      window.print();
+    }
   };
 
   return (
@@ -174,8 +207,11 @@ const ResultsPage: React.FC = () => {
                 <Link to={currentUser?.isAdmin ? "/admin" : "/dashboard"} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 sm:px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-center">
                     Dashboard
                 </Link>
-                <button onClick={handleDownloadPDF} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                    Download PDF
+                <button onClick={handleDownloadPDF} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download Questions PDF
                 </button>
             </div>
 
