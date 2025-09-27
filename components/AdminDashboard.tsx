@@ -310,7 +310,7 @@ const AdminDashboard: React.FC = () => {
       
       if (status === 'approved') {
         await supabaseService.createNotification(u.id, 'Test approved', `You can now access ${test.title}.`);
-      } else {
+            } else {
         await supabaseService.createNotification(u.id, 'Test locked', `${test.title} has been locked.`);
       }
       
@@ -323,20 +323,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteTest = async (testId: string, testTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${testTitle}"? This will also delete all associated questions and cannot be undone.`)) {
-      return;
-    }
-    
-    try {
-      await supabaseService.deleteTest(testId);
-      dispatch({ type: 'DELETE_TEST', payload: testId });
-      alert('Test deleted successfully!');
-    } catch (error) {
-      console.error('Failed to delete test:', error);
-      alert('Failed to delete test. Please try again.');
-    }
-  };
 
   // Dropdown toggle function
   const toggleCategoryExpansion = (categoryId: string) => {
@@ -414,8 +400,8 @@ const AdminDashboard: React.FC = () => {
               <span>Admin</span>
             </label>
             <button type="submit" className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg w-full font-medium transition-colors">Save</button>
-          </form>
-        </Modal>
+                </form>
+            </Modal>
         {/* History Modal */}
         <Modal isOpen={!!historyUser} onClose={() => setHistoryUser(null)} title={`History – ${historyUser?.name || ''}`}>
           <div className="max-h-[28rem] overflow-auto pr-2 custom-scroll">
@@ -666,6 +652,21 @@ const AdminDashboard: React.FC = () => {
           closeModal();
         } catch (error) {
           console.error('Error saving test:', error);
+        }
+    };
+
+    const handleDeleteTest = async (testId: string, testTitle: string) => {
+      if (!confirm(`Are you sure you want to delete "${testTitle}"? This will also delete all associated questions and cannot be undone.`)) {
+        return;
+      }
+      
+      try {
+        await supabaseService.deleteTest(testId);
+        dispatch({ type: 'DELETE_TEST', payload: testId });
+        alert('Test deleted successfully!');
+      } catch (error) {
+        console.error('Failed to delete test:', error);
+        alert('Failed to delete test. Please try again.');
         }
     };
 
@@ -988,6 +989,21 @@ const AdminDashboard: React.FC = () => {
              categoryName.toLowerCase().includes(searchTerm);
     });
 
+    const handleDeleteTest = async (testId: string, testTitle: string) => {
+      if (!confirm(`Are you sure you want to delete "${testTitle}"? This will also delete all associated questions and cannot be undone.`)) {
+        return;
+      }
+      
+      try {
+        await supabaseService.deleteTest(testId);
+        dispatch({ type: 'DELETE_TEST', payload: testId });
+        alert('Test deleted successfully!');
+      } catch (error) {
+        console.error('Failed to delete test:', error);
+        alert('Failed to delete test. Please try again.');
+      }
+    };
+
     return (
       <div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
@@ -1023,7 +1039,7 @@ const AdminDashboard: React.FC = () => {
             <span>Add Test to This Category</span>
           </button>
         </div>
-
+        
         {/* Search Bar */}
         <div className="mb-6">
           <input
@@ -1048,16 +1064,16 @@ const AdminDashboard: React.FC = () => {
                     <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
                       Questions: {test.totalQuestions}
                     </span>
-                  </div>
+              </div>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   <button 
                     onClick={() => { 
-                      // Remember which category we came from so back button returns to that filtered view
-                      if (viewingCategoryTests) setPreviousCategoryIdForQuestions(viewingCategoryTests.id);
-                      setViewingCategoryTests(null); 
-                      setSelectedTestForQuestions(test); 
-                      setCurrentView('questions'); 
+                  // Remember which category we came from so back button returns to that filtered view
+                  if (viewingCategoryTests) setPreviousCategoryIdForQuestions(viewingCategoryTests.id);
+                  setViewingCategoryTests(null); 
+                  setSelectedTestForQuestions(test); 
+                  setCurrentView('questions'); 
                     }} 
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                   >
@@ -1080,7 +1096,7 @@ const AdminDashboard: React.FC = () => {
                   >
                     <TrashIcon />
                   </button>
-                </div>
+              </div>
               </div>
             </div>
           ))}
