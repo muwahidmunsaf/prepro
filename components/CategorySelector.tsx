@@ -38,9 +38,8 @@ const CategorySelector: React.FC = () => {
       try {
         const updated = await supabaseService.fetchTestAccess();
         dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
-        console.log('DATABASE: Refreshed test access data:', updated);
       } catch (error) {
-        console.error('DATABASE: Failed to refresh test access:', error);
+        console.error('Failed to refresh test access:', error);
       }
     };
     
@@ -110,17 +109,13 @@ const CategorySelector: React.FC = () => {
   const isTestApproved = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
-    const isApproved = entry?.status === 'approved';
-    console.log(`DATABASE: Test ${testId} approved:`, isApproved, 'Entry:', entry, 'All data:', state.testAccess);
-    return isApproved;
+    return entry?.status === 'approved';
   }
   
   const isTestRequested = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
-    const isRequested = entry?.status === 'requested';
-    console.log(`DATABASE: Test ${testId} requested:`, isRequested, 'Entry:', entry);
-    return isRequested;
+    return entry?.status === 'requested';
   }
 
   return (
@@ -210,27 +205,6 @@ const CategorySelector: React.FC = () => {
               </button>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white">{selectedCategory.name} Tests</h1>
             </div>
-            <button 
-              onClick={async () => {
-                try {
-                  const updated = await supabaseService.fetchTestAccess();
-                  dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
-                  setBanner('Test access status refreshed!');
-                  setTimeout(() => setBanner(''), 2000);
-                  console.log('DATABASE: Manual refresh completed:', updated);
-                } catch (error) {
-                  setBanner('Failed to refresh test access status');
-                  setTimeout(() => setBanner(''), 3000);
-                  console.error('DATABASE: Manual refresh failed:', error);
-                }
-              }}
-              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              Refresh Status
-            </button>
           </div>
           {testsForCategory.length > 0 ? (
             <div className="space-y-4">

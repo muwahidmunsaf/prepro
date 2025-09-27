@@ -461,7 +461,7 @@ export async function fetchTestAccess(): Promise<TestAccess[]> {
   try {
     const { data, error } = await supabase.from('test_access').select('*');
     if (error) {
-      console.error('DATABASE: Error fetching test access:', error);
+      console.error('Error fetching test access:', error);
       throw error;
     }
     
@@ -473,10 +473,9 @@ export async function fetchTestAccess(): Promise<TestAccess[]> {
       updatedAt: a.updated_at 
     }));
     
-    console.log('DATABASE: Fetched test access:', result);
     return result;
   } catch (error) {
-    console.error('DATABASE: Failed to fetch test access:', error);
+    console.error('Failed to fetch test access:', error);
     // Return empty array if database fails
     return [];
   }
@@ -484,8 +483,6 @@ export async function fetchTestAccess(): Promise<TestAccess[]> {
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {
   try {
-    console.log('DATABASE: Upserting test access:', { userId, testId, status });
-    
     const { data, error } = await supabase
       .from('test_access')
       .upsert({ 
@@ -499,7 +496,7 @@ export async function upsertTestAccess(userId: string, testId: string, status: T
       .single();
     
     if (error) {
-      console.error('DATABASE: Error upserting test access:', error);
+      console.error('Error upserting test access:', error);
       throw error;
     }
     
@@ -511,10 +508,9 @@ export async function upsertTestAccess(userId: string, testId: string, status: T
       updatedAt: data.updated_at 
     };
     
-    console.log('DATABASE: Successfully upserted test access:', result);
     return result;
   } catch (error) {
-    console.error('DATABASE: Failed to upsert test access:', error);
+    console.error('Failed to upsert test access:', error);
     throw error;
   }
 }
