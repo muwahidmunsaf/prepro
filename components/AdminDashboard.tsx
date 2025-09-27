@@ -323,6 +323,21 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteTest = async (testId: string, testTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${testTitle}"? This will also delete all associated questions and cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      await supabaseService.deleteTest(testId);
+      dispatch({ type: 'DELETE_TEST', payload: testId });
+      alert('Test deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete test:', error);
+      alert('Failed to delete test. Please try again.');
+    }
+  };
+
   // Dropdown toggle function
   const toggleCategoryExpansion = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -692,7 +707,7 @@ const AdminDashboard: React.FC = () => {
                             <button onClick={() => openModal(test)} className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                 <EditIcon className="w-4 h-4" />
                             </button>
-                            <button onClick={() => dispatch({type: 'DELETE_TEST', payload: test.id})} className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <button onClick={() => handleDeleteTest(test.id, test.title)} className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                 <TrashIcon className="w-4 h-4" />
                             </button>
                         </div>
@@ -1059,7 +1074,7 @@ const AdminDashboard: React.FC = () => {
                     <EditIcon />
                   </button>
                   <button 
-                    onClick={() => dispatch({type: 'DELETE_TEST', payload: test.id})} 
+                    onClick={() => handleDeleteTest(test.id, test.title)} 
                     className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
                     title="Delete Test"
                   >
