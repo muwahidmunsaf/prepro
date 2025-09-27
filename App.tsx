@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { useAppContext } from './hooks/useAppContext';
 import LandingPage from './components/LandingPage';
@@ -56,9 +56,9 @@ const AppRoutes = () => {
 
 const App = () => (
     <AppProvider>
-        <HashRouter>
+        <BrowserRouter>
             <AppRoutes />
-        </HashRouter>
+        </BrowserRouter>
     </AppProvider>
 );
 
