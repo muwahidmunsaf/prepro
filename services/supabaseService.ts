@@ -186,6 +186,7 @@ export async function fetchTests(): Promise<Test[]> {
   const { data, error } = await supabase
     .from('tests')
     .select('*')
+    .eq('deleted', false) // Only fetch non-deleted tests
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -247,9 +248,13 @@ export async function updateTest(test: Test): Promise<Test> {
 }
 
 export async function deleteTest(id: string): Promise<void> {
+  // Use soft delete to preserve user test results and performance data
   const { error } = await supabase
     .from('tests')
-    .delete()
+    .update({ 
+      deleted: true, 
+      deleted_at: new Date().toISOString() 
+    })
     .eq('id', id);
 
   if (error) throw error;
