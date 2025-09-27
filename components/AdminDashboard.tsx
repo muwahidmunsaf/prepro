@@ -67,6 +67,10 @@ const AdminDashboard: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{id: string, title: string, type: 'test' | 'category' | 'question'} | null>(null);
   
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
   const openModal = (item: Category | Test | Question | null = null) => {
     setEditingItem(item);
     setIsModalOpen(true);
@@ -95,6 +99,21 @@ const AdminDashboard: React.FC = () => {
     setItemToDelete(null);
   };
 
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessModal(true);
+    // Auto-close after 3 seconds
+    setTimeout(() => {
+      setShowSuccessModal(false);
+      setSuccessMessage('');
+    }, 3000);
+  };
+
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessMessage('');
+  };
+
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     
@@ -111,10 +130,10 @@ const AdminDashboard: React.FC = () => {
       }
       
       closeDeleteModal();
-      alert(`${itemToDelete.type.charAt(0).toUpperCase() + itemToDelete.type.slice(1)} deleted successfully!`);
+      showSuccess(`${itemToDelete.type.charAt(0).toUpperCase() + itemToDelete.type.slice(1)} deleted successfully!`);
     } catch (error) {
       console.error(`Failed to delete ${itemToDelete.type}:`, error);
-      alert(`Failed to delete ${itemToDelete.type}. Please try again.`);
+      showSuccess(`Failed to delete ${itemToDelete.type}. Please try again.`);
     }
   };
 
@@ -1252,6 +1271,36 @@ const AdminDashboard: React.FC = () => {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Custom Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-green-100 dark:bg-green-900/20 rounded-full">
+              <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
+              Success!
+            </h3>
+            
+            <p className="text-slate-600 dark:text-slate-400 text-center mb-6">
+              {successMessage}
+            </p>
+            
+            <div className="flex justify-center">
+              <button
+                onClick={closeSuccessModal}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                OK
               </button>
             </div>
           </div>
