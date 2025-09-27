@@ -32,28 +32,23 @@ const CategorySelector: React.FC = () => {
   const [banner, setBanner] = useState<string>('');
   const [busyIds, setBusyIds] = useState<Record<string, boolean>>({});
 
-  // FRESH REFRESH MECHANISM
+  // DATABASE-ONLY REFRESH MECHANISM
   useEffect(() => {
     const refreshTestAccess = async () => {
       try {
         const updated = await supabaseService.fetchTestAccess();
         dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
-        console.log('FRESH: Refreshed test access data:', updated);
-        
-        // Also log localStorage directly
-        const localStorageData = localStorage.getItem('test_access');
-        console.log('FRESH: localStorage data on user side:', localStorageData);
-        
+        console.log('DATABASE: Refreshed test access data:', updated);
       } catch (error) {
-        console.error('FRESH: Failed to refresh test access:', error);
+        console.error('DATABASE: Failed to refresh test access:', error);
       }
     };
     
     if (user) {
       refreshTestAccess();
       
-      // Refresh every 2 seconds
-      const interval = setInterval(refreshTestAccess, 2000);
+      // Refresh every 3 seconds
+      const interval = setInterval(refreshTestAccess, 3000);
       return () => clearInterval(interval);
     }
   }, [user, dispatch]);
@@ -111,12 +106,12 @@ const CategorySelector: React.FC = () => {
     return entry?.status === 'requested';
   }
 
-  // FRESH TEST ACCESS FUNCTIONS
+  // DATABASE-ONLY TEST ACCESS FUNCTIONS
   const isTestApproved = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
     const isApproved = entry?.status === 'approved';
-    console.log(`FRESH: Test ${testId} approved:`, isApproved, 'Entry:', entry, 'All data:', state.testAccess);
+    console.log(`DATABASE: Test ${testId} approved:`, isApproved, 'Entry:', entry, 'All data:', state.testAccess);
     return isApproved;
   }
   
@@ -124,7 +119,7 @@ const CategorySelector: React.FC = () => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
     const isRequested = entry?.status === 'requested';
-    console.log(`FRESH: Test ${testId} requested:`, isRequested, 'Entry:', entry);
+    console.log(`DATABASE: Test ${testId} requested:`, isRequested, 'Entry:', entry);
     return isRequested;
   }
 
@@ -215,44 +210,27 @@ const CategorySelector: React.FC = () => {
               </button>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white">{selectedCategory.name} Tests</h1>
             </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={async () => {
-                  try {
-                    const updated = await supabaseService.fetchTestAccess();
-                    dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
-                    setBanner('Test access status refreshed!');
-                    setTimeout(() => setBanner(''), 2000);
-                    console.log('ULTRA FRESH: Manual refresh completed:', updated);
-                  } catch (error) {
-                    setBanner('Failed to refresh test access status');
-                    setTimeout(() => setBanner(''), 3000);
-                    console.error('ULTRA FRESH: Manual refresh failed:', error);
-                  }
-                }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                Refresh
-              </button>
-              <button 
-                onClick={() => {
-                  supabaseService.clearAllTestAccessData();
-                  dispatch({ type: 'SET_TEST_ACCESS', payload: [] } as any);
-                  setBanner('All test access data cleared!');
+            <button 
+              onClick={async () => {
+                try {
+                  const updated = await supabaseService.fetchTestAccess();
+                  dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
+                  setBanner('Test access status refreshed!');
                   setTimeout(() => setBanner(''), 2000);
-                  console.log('ULTRA FRESH: All data cleared');
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                </svg>
-                Clear All
-              </button>
-            </div>
+                  console.log('DATABASE: Manual refresh completed:', updated);
+                } catch (error) {
+                  setBanner('Failed to refresh test access status');
+                  setTimeout(() => setBanner(''), 3000);
+                  console.error('DATABASE: Manual refresh failed:', error);
+                }
+              }}
+              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Refresh Status
+            </button>
           </div>
           {testsForCategory.length > 0 ? (
             <div className="space-y-4">
