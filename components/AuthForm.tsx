@@ -123,12 +123,12 @@ const AuthForm: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold text-center text-slate-800 dark:text-white mb-6">
+    <div className="max-w-md mx-auto mt-4 sm:mt-10 bg-white dark:bg-slate-800 p-4 sm:p-8 rounded-xl shadow-lg">
+      <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-800 dark:text-white mb-6">
         {isSignUp ? 'Create an Account' : 'Welcome Back'}
       </h2>
-      {error && <p className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">{error}</p>}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {error && <p className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center text-sm">{error}</p>}
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {isSignUp && (
           <div>
             <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Name</label>
@@ -138,7 +138,7 @@ const AuthForm: React.FC = () => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                className="w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-base"
                 placeholder="John Doe"
               />
             </div>
@@ -146,60 +146,60 @@ const AuthForm: React.FC = () => {
         )}
         <div>
           <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Email</label>
-           <div className="relative mt-1">
-              <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                placeholder="you@example.com"
-              />
-            </div>
+          <div className="relative mt-1">
+            <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-base"
+              placeholder="you@example.com"
+            />
+          </div>
         </div>
-            <div>
-              <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Password</label>
-                <div className="relative mt-1">
-                    <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="••••••••"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
-                        {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                    </button>
-                </div>
-            </div>
+        <div>
+          <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Password</label>
+          <div className="relative mt-1">
+            <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-base"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            >
+              {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          className="w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-base"
         >
           {isSignUp ? 'Sign Up' : 'Sign In'}
         </button>
       </form>
-          <div className="text-center mt-6 space-y-2">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <button onClick={() => {setIsSignUp(!isSignUp); setError('');}} className="font-medium text-indigo-600 hover:text-indigo-500">
-                {isSignUp ? 'Sign In' : 'Sign Up'}
-              </button>
-            </p>
-            {!isSignUp && (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Forgot your password?{' '}
-                <button onClick={() => setShowForgotPassword(true)} className="font-medium text-indigo-600 hover:text-indigo-500">
-                  Reset Password
-                </button>
-              </p>
-            )}
-          </div>
+      <div className="text-center mt-6 space-y-3">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button onClick={() => {setIsSignUp(!isSignUp); setError('');}} className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+            {isSignUp ? 'Sign In' : 'Sign Up'}
+          </button>
+        </p>
+        {!isSignUp && (
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Forgot your password?{' '}
+            <button onClick={() => setShowForgotPassword(true)} className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+              Reset Password
+            </button>
+          </p>
+        )}
+      </div>
     </div>
   );
 };

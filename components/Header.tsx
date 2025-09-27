@@ -58,14 +58,14 @@ const Header: React.FC = () => {
           </div>
           <span className="text-lg sm:text-xl font-bold text-white">PrepPro</span>
         </Link>
-        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleDarkMode}
             className="p-2 text-white/80 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
             title={state.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            <span className="text-lg sm:text-xl">{state.isDarkMode ? '☀️' : '🌙'}</span>
+            <span className="text-lg">{state.isDarkMode ? '☀️' : '🌙'}</span>
           </button>
           
           {state.currentUser && (
@@ -85,7 +85,7 @@ const Header: React.FC = () => {
                 {items.some(i=>!i.is_read) && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"/>}
               </button>
               {open && (
-                <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-h-96 overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
                   <div className="px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700">Notifications</div>
                   {items.length === 0 ? (
                     <div className="p-3 text-sm text-slate-500">No notifications</div>
@@ -96,8 +96,8 @@ const Header: React.FC = () => {
                       </svg>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-900 dark:text-white font-medium">{n.title}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{n.message}</p>
-                      <p className="text-[11px] text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{n.message}</p>
+                        <p className="text-[11px] text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                   ))}
@@ -113,7 +113,7 @@ const Header: React.FC = () => {
               </div>
               <button
                 onClick={handleSignOut}
-                className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 text-xs sm:text-sm"
+                className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-200 text-sm"
               >
                 <span className="hidden sm:inline">Sign Out</span>
                 <span className="sm:hidden">Out</span>
@@ -128,7 +128,7 @@ const Header: React.FC = () => {
               <Link
                 to="/auth"
                 state={{ isSignUp: true }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 text-xs sm:text-sm"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-200 text-sm"
               >
                 <span className="hidden sm:inline">Sign Up</span>
                 <span className="sm:hidden">Up</span>

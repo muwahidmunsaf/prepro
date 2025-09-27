@@ -34,7 +34,7 @@ const AppRoutes = () => {
     return (
         <div className="min-h-screen flex flex-col">
             <Header />
-            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl">
                 <Routes>
                     <Route path="/" element={!state.currentUser ? <LandingPage /> : <Navigate to={state.currentUser.isAdmin ? "/admin" : "/dashboard"} />} />
                     <Route path="/auth" element={!state.currentUser ? <AuthForm /> : <Navigate to={state.currentUser.isAdmin ? "/admin" : "/dashboard"} />} />
