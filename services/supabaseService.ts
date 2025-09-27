@@ -456,81 +456,47 @@ export async function upsertCategoryAccess(userId: string, categoryId: string, s
   return { id: data.id.toString(), userId: data.user_id.toString(), categoryId: data.category_id.toString(), status: data.status, updatedAt: data.updated_at };
 }
 
-// NEW SIMPLE TEST ACCESS MANAGEMENT
+// FRESH TEST ACCESS MANAGEMENT - COMPLETELY NEW APPROACH
 export async function fetchTestAccess(): Promise<TestAccess[]> {
-  try {
-    const { data, error } = await supabase.from('test_access').select('*');
-    if (error) throw error;
-    return (data || []).map(a => ({ id: a.id.toString(), userId: a.user_id.toString(), testId: a.test_id.toString(), status: a.status, updatedAt: a.updated_at }));
-  } catch (error) {
-    // Simple localStorage fallback
-    console.log('test_access table not found, using localStorage');
-    return getTestAccessFromLocalStorage();
-  }
-}
-
-function getTestAccessFromLocalStorage(): TestAccess[] {
-  const data = localStorage.getItem('test_access_data');
+  // Always use localStorage for now - no database dependency
+  const data = localStorage.getItem('test_access');
   if (!data) return [];
   
   try {
     const parsed = JSON.parse(data);
-    console.log('Loaded test access from localStorage:', parsed);
+    console.log('FRESH: Loaded test access:', parsed);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error('Error parsing localStorage test access:', error);
+    console.error('FRESH: Error parsing test access:', error);
     return [];
   }
 }
 
 export async function upsertTestAccess(userId: string, testId: string, status: TestAccess['status']): Promise<TestAccess> {
-  try {
-    const { data, error } = await supabase
-      .from('test_access')
-      .upsert({ user_id: parseInt(userId), test_id: parseInt(testId), status }, { onConflict: 'user_id,test_id' })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    return { id: data.id.toString(), userId: data.user_id.toString(), testId: data.test_id.toString(), status: data.status, updatedAt: data.updated_at };
-  } catch (error) {
-    // Simple localStorage fallback
-    console.log('test_access table not found, using localStorage');
-    return upsertTestAccessToLocalStorage(userId, testId, status);
-  }
-}
-
-function upsertTestAccessToLocalStorage(userId: string, testId: string, status: TestAccess['status']): TestAccess {
   const testAccessData = {
-    id: `local_${Date.now()}`,
+    id: `test_${Date.now()}`,
     userId: String(userId),
     testId: String(testId),
     status,
     updatedAt: new Date().toISOString()
   };
   
-  console.log('Storing test access:', testAccessData);
+  console.log('FRESH: Upserting test access:', testAccessData);
   
   // Get current data
-  const currentData = getTestAccessFromLocalStorage();
+  const currentData = await fetchTestAccess();
   
-  // Find and update existing entry or add new one
-  const existingIndex = currentData.findIndex(item => 
-    item.userId === String(userId) && item.testId === String(testId)
+  // Remove any existing entry for this user+test combination
+  const filteredData = currentData.filter(item => 
+    !(item.userId === String(userId) && item.testId === String(testId))
   );
   
-  if (existingIndex >= 0) {
-    currentData[existingIndex] = testAccessData;
-    console.log('Updated existing entry at index:', existingIndex);
-  } else {
-    currentData.push(testAccessData);
-    console.log('Added new entry');
-  }
+  // Add the new entry
+  filteredData.push(testAccessData);
   
   // Save back to localStorage
-  localStorage.setItem('test_access_data', JSON.stringify(currentData));
-  console.log('Saved test access data:', currentData);
+  localStorage.setItem('test_access', JSON.stringify(filteredData));
+  console.log('FRESH: Saved test access data:', filteredData);
   
   return testAccessData;
 }

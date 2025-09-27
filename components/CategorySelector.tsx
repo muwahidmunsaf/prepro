@@ -32,23 +32,23 @@ const CategorySelector: React.FC = () => {
   const [banner, setBanner] = useState<string>('');
   const [busyIds, setBusyIds] = useState<Record<string, boolean>>({});
 
-  // NEW SIMPLE REFRESH MECHANISM
+  // FRESH REFRESH MECHANISM
   useEffect(() => {
     const refreshTestAccess = async () => {
       try {
         const updated = await supabaseService.fetchTestAccess();
         dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
-        console.log('Refreshed test access data:', updated);
+        console.log('FRESH: Refreshed test access data:', updated);
       } catch (error) {
-        console.error('Failed to refresh test access:', error);
+        console.error('FRESH: Failed to refresh test access:', error);
       }
     };
     
     if (user) {
       refreshTestAccess();
       
-      // Refresh every 3 seconds
-      const interval = setInterval(refreshTestAccess, 3000);
+      // Refresh every 2 seconds
+      const interval = setInterval(refreshTestAccess, 2000);
       return () => clearInterval(interval);
     }
   }, [user, dispatch]);
@@ -106,12 +106,12 @@ const CategorySelector: React.FC = () => {
     return entry?.status === 'requested';
   }
 
-  // NEW SIMPLE TEST ACCESS FUNCTIONS
+  // FRESH TEST ACCESS FUNCTIONS
   const isTestApproved = (testId: string) => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
     const isApproved = entry?.status === 'approved';
-    console.log(`Test ${testId} approved:`, isApproved, 'Entry:', entry);
+    console.log(`FRESH: Test ${testId} approved:`, isApproved, 'Entry:', entry, 'All data:', state.testAccess);
     return isApproved;
   }
   
@@ -119,7 +119,7 @@ const CategorySelector: React.FC = () => {
     if (!user) return false;
     const entry = state.testAccess?.find(a => a.userId === String(user.id) && a.testId === String(testId));
     const isRequested = entry?.status === 'requested';
-    console.log(`Test ${testId} requested:`, isRequested, 'Entry:', entry);
+    console.log(`FRESH: Test ${testId} requested:`, isRequested, 'Entry:', entry);
     return isRequested;
   }
 
@@ -217,11 +217,11 @@ const CategorySelector: React.FC = () => {
                   dispatch({ type: 'SET_TEST_ACCESS', payload: updated } as any);
                   setBanner('Test access status refreshed!');
                   setTimeout(() => setBanner(''), 2000);
-                  console.log('Manual refresh completed:', updated);
+                  console.log('FRESH: Manual refresh completed:', updated);
                 } catch (error) {
                   setBanner('Failed to refresh test access status');
                   setTimeout(() => setBanner(''), 3000);
-                  console.error('Manual refresh failed:', error);
+                  console.error('FRESH: Manual refresh failed:', error);
                 }
               }}
               className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"

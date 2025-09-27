@@ -268,6 +268,7 @@ const AdminDashboard: React.FC = () => {
 
   const toggleTestAccess = async (u: User, test: Test, status: 'approved' | 'locked') => {
     try {
+      console.log('FRESH: Admin toggling test access:', { userId: u.id, testId: test.id, status });
       await supabaseService.upsertTestAccess(u.id, test.id, status);
       if (status === 'approved') {
         await supabaseService.createNotification(u.id, 'Test approved', `You can now access ${test.title}.`);
@@ -276,7 +277,9 @@ const AdminDashboard: React.FC = () => {
       }
       const updatedAccess = await supabaseService.fetchTestAccess();
       dispatch({ type: 'SET_TEST_ACCESS', payload: updatedAccess } as any);
-    } catch {
+      console.log('FRESH: Admin updated test access:', updatedAccess);
+    } catch (error) {
+      console.error('FRESH: Failed to update test access:', error);
       alert('Failed to update test access');
     }
   };
