@@ -2,7 +2,6 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
 import { CheckCircleIcon, XCircleIcon } from './icons';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const ResultsPage: React.FC = () => {
@@ -24,110 +23,92 @@ const ResultsPage: React.FC = () => {
     window.print();
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     try {
-      // Get the print container element
-      const element = document.querySelector('.print-container') as HTMLElement;
-      if (!element) return;
-
-      // Create a temporary container for PDF generation
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '800px';
-      tempContainer.style.backgroundColor = 'white';
-      tempContainer.style.padding = '20px';
-      tempContainer.style.fontFamily = 'Arial, sans-serif';
-      tempContainer.style.color = 'black';
-      
-      // Clone the content and modify for PDF
-      const clonedElement = element.cloneNode(true) as HTMLElement;
-      
-      // Hide elements that shouldn't be in PDF
-      const noPrintElements = clonedElement.querySelectorAll('.no-print');
-      noPrintElements.forEach(el => {
-        (el as HTMLElement).style.display = 'none';
-      });
-      
-      // Show print-only elements
-      const printOnlyElements = clonedElement.querySelectorAll('.print-only-block');
-      printOnlyElements.forEach(el => {
-        (el as HTMLElement).style.display = 'block';
-      });
-      
-      // Add PDF-specific styles
-      clonedElement.style.backgroundColor = 'white';
-      clonedElement.style.color = 'black';
-      clonedElement.style.maxWidth = 'none';
-      clonedElement.style.boxShadow = 'none';
-      clonedElement.style.borderRadius = '0';
-      
-      // Style questions for PDF
-      const questions = clonedElement.querySelectorAll('.print-question');
-      questions.forEach((q, index) => {
-        const questionEl = q as HTMLElement;
-        questionEl.style.pageBreakInside = 'avoid';
-        questionEl.style.marginBottom = '20px';
-        questionEl.style.padding = '15px';
-        questionEl.style.border = '1px solid #ddd';
-        questionEl.style.borderRadius = '8px';
-        
-        // Add question number
-        const questionNumber = document.createElement('div');
-        questionNumber.style.fontWeight = 'bold';
-        questionNumber.style.fontSize = '16px';
-        questionNumber.style.marginBottom = '10px';
-        questionNumber.style.color = '#333';
-        questionNumber.textContent = `Question ${index + 1}`;
-        questionEl.insertBefore(questionNumber, questionEl.firstChild);
-      });
-      
-      // Style correct answers
-      const correctAnswers = clonedElement.querySelectorAll('.print-correct');
-      correctAnswers.forEach(el => {
-        (el as HTMLElement).style.backgroundColor = '#dcfce7';
-        (el as HTMLElement).style.borderColor = '#16a34a';
-      });
-      
-      tempContainer.appendChild(clonedElement);
-      document.body.appendChild(tempContainer);
-      
-      // Generate canvas from the element
-      const canvas = await html2canvas(tempContainer, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        width: 800,
-        height: tempContainer.scrollHeight
-      });
-      
-      // Remove temporary container
-      document.body.removeChild(tempContainer);
-      
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png');
+      // Create PDF with text content
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      
-      let position = 0;
-      
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+
+      // Helper function to add text with word wrap
+      const addText = (text: string, fontSize: number = 12, isBold: boolean = false, color: string = '#000000') => {
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+        pdf.setTextColor(color);
+        
+        const lines = pdf.splitTextToSize(text, contentWidth);
+        
+        for (const line of lines) {
+          if (yPosition + lineHeight > pageHeight - margin) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          pdf.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        }
+        yPosition += 2; // Add small spacing after text
+      };
+
+      // Add header
+      addText('PrepPro Test Questions', 18, true);
+      addText(`Test: ${test.title}`, 14, true);
+      addText(`Date: ${new Date(result.date).toLocaleDateString()}`, 12);
+      addText(`Score: ${result.score}/${result.totalQuestions} (${percentage}%)`, 12);
+      yPosition += 10;
+
+      // Add questions
+      result.questions.forEach((question, index) => {
+        const userAnswer = result.answers.find(a => a.questionId === question.id);
+        const isCorrect = userAnswer?.selectedAnswer === question.correctAnswer;
+
+        // Question number and text
+        addText(`Question ${index + 1}:`, 14, true);
+        addText(question.questionText, 12);
+        yPosition += 3;
+
+        // Options
+        question.options.forEach((option, optIndex) => {
+          const isSelected = userAnswer?.selectedAnswer === optIndex;
+          const isCorrectAnswer = question.correctAnswer === optIndex;
+          
+          let optionText = `${String.fromCharCode(65 + optIndex)}. ${option}`;
+          
+          if (isCorrectAnswer) {
+            // Bold the correct answer
+            optionText = `${String.fromCharCode(65 + optIndex)}. ${option} (CORRECT ANSWER)`;
+            addText(optionText, 12, true, '#16a34a'); // Green and bold
+          } else if (isSelected) {
+            // Show user's incorrect answer
+            optionText = `${String.fromCharCode(65 + optIndex)}. ${option} (Your Answer)`;
+            addText(optionText, 12, false, '#dc2626'); // Red
+          } else {
+            addText(optionText, 12);
+          }
+        });
+
+        // Add result indicator
+        if (isCorrect) {
+          addText('✓ Correct', 12, true, '#16a34a');
+        } else {
+          addText('✗ Incorrect', 12, true, '#dc2626');
+        }
+
+        yPosition += 8; // Space between questions
+      });
+
+      // Add summary at the end
+      yPosition += 10;
+      addText('--- Test Summary ---', 14, true);
+      addText(`Total Questions: ${result.totalQuestions}`, 12);
+      addText(`Correct Answers: ${result.score}`, 12);
+      addText(`Incorrect Answers: ${result.totalQuestions - result.score}`, 12);
+      addText(`Percentage: ${percentage}%`, 12);
+      addText(`Status: ${percentage >= 70 ? 'PASSED' : 'FAILED'}`, 12, true, percentage >= 70 ? '#16a34a' : '#dc2626');
+
       // Download the PDF
       const fileName = `PrepPro_Test_Questions_${test.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
