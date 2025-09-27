@@ -130,7 +130,7 @@ const AdminDashboard: React.FC = () => {
       }
       
       closeDeleteModal();
-      showSuccess(`${itemToDelete.type.charAt(0).toUpperCase() + itemToDelete.type.slice(1)} deleted successfully!`);
+      showSuccess(`${itemToDelete.type.charAt(0).toUpperCase() + itemToDelete.type.slice(1)} deleted successfully! User test results and performance data have been preserved.`);
     } catch (error) {
       console.error(`Failed to delete ${itemToDelete.type}:`, error);
       showSuccess(`Failed to delete ${itemToDelete.type}. Please try again.`);
