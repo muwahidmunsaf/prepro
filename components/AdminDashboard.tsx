@@ -264,16 +264,39 @@ const AdminDashboard: React.FC = () => {
 
     const approveAllPending = async (u: User) => {
       try {
-        const pending = (state.categoryAccess || []).filter(a => a.userId === u.id && a.status === 'requested');
-        for (const a of pending) {
+        // Approve all pending category requests
+        const pendingCategories = (state.categoryAccess || []).filter(a => a.userId === u.id && a.status === 'requested');
+        for (const a of pendingCategories) {
           const cat = state.categories.find(c=>c.id===a.categoryId);
           if (!cat) continue;
           await supabaseService.upsertCategoryAccess(u.id, a.categoryId, 'approved');
         }
-        if (pending.length) await supabaseService.createNotification(u.id, 'All requested categories approved', `${pending.length} categories approved.`);
-        const updatedAccess = await supabaseService.fetchCategoryAccess();
-        dispatch({ type: 'SET_CATEGORY_ACCESS', payload: updatedAccess } as any);
-      } catch { alert('Failed to approve all'); }
+        
+        // Approve all pending test requests
+        const pendingTests = (state.testAccess || []).filter(a => a.userId === u.id && a.status === 'requested');
+        for (const a of pendingTests) {
+          const test = state.tests.find(t=>t.id===a.testId);
+          if (!test) continue;
+          await supabaseService.upsertTestAccess(u.id, a.testId, 'approved');
+        }
+        
+        // Create notification with total count
+        const totalApproved = pendingCategories.length + pendingTests.length;
+        if (totalApproved > 0) {
+          const message = `${pendingCategories.length} categories and ${pendingTests.length} tests approved.`;
+          await supabaseService.createNotification(u.id, 'All pending requests approved', message);
+        }
+        
+        // Update both access lists
+        const updatedCategoryAccess = await supabaseService.fetchCategoryAccess();
+        const updatedTestAccess = await supabaseService.fetchTestAccess();
+        dispatch({ type: 'SET_CATEGORY_ACCESS', payload: updatedCategoryAccess } as any);
+        dispatch({ type: 'SET_TEST_ACCESS', payload: updatedTestAccess } as any);
+        
+      } catch (error) { 
+        console.error('Failed to approve all pending:', error);
+        alert('Failed to approve all pending requests'); 
+      }
     }
 
     const getAccessStatus = (uId: string, cId: string) => state.categoryAccess?.find(a => a.userId === uId && a.categoryId === cId)?.status || 'locked';
