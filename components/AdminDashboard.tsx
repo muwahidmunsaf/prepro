@@ -63,6 +63,10 @@ const AdminDashboard: React.FC = () => {
   const [returnToCategoryIdOnClose, setReturnToCategoryIdOnClose] = useState<string | null>(null);
   const [previousCategoryIdForQuestions, setPreviousCategoryIdForQuestions] = useState<string | null>(null);
   
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{id: string, title: string, type: 'test' | 'category' | 'question'} | null>(null);
+  
   const openModal = (item: Category | Test | Question | null = null) => {
     setEditingItem(item);
     setIsModalOpen(true);
@@ -78,6 +82,39 @@ const AdminDashboard: React.FC = () => {
       setViewingCategoryTests(cat || null);
       setReturnToCategoryIdOnClose(null);
       setTestSearch('');
+    }
+  };
+
+  const openDeleteModal = (id: string, title: string, type: 'test' | 'category' | 'question') => {
+    setItemToDelete({ id, title, type });
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    try {
+      if (itemToDelete.type === 'test') {
+        await supabaseService.deleteTest(itemToDelete.id);
+        dispatch({ type: 'DELETE_TEST', payload: itemToDelete.id });
+      } else if (itemToDelete.type === 'category') {
+        await supabaseService.deleteCategory(itemToDelete.id);
+        dispatch({ type: 'DELETE_CATEGORY', payload: itemToDelete.id });
+      } else if (itemToDelete.type === 'question') {
+        await supabaseService.deleteQuestion(itemToDelete.id);
+        dispatch({ type: 'DELETE_QUESTION', payload: itemToDelete.id });
+      }
+      
+      closeDeleteModal();
+      alert(`${itemToDelete.type.charAt(0).toUpperCase() + itemToDelete.type.slice(1)} deleted successfully!`);
+    } catch (error) {
+      console.error(`Failed to delete ${itemToDelete.type}:`, error);
+      alert(`Failed to delete ${itemToDelete.type}. Please try again.`);
     }
   };
 
@@ -655,19 +692,8 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    const handleDeleteTest = async (testId: string, testTitle: string) => {
-      if (!confirm(`Are you sure you want to delete "${testTitle}"? This will also delete all associated questions and cannot be undone.`)) {
-        return;
-      }
-      
-      try {
-        await supabaseService.deleteTest(testId);
-        dispatch({ type: 'DELETE_TEST', payload: testId });
-        alert('Test deleted successfully!');
-      } catch (error) {
-        console.error('Failed to delete test:', error);
-        alert('Failed to delete test. Please try again.');
-        }
+    const handleDeleteTest = (testId: string, testTitle: string) => {
+      openDeleteModal(testId, testTitle, 'test');
     };
 
     // Filter tests based on search
@@ -989,19 +1015,8 @@ const AdminDashboard: React.FC = () => {
              categoryName.toLowerCase().includes(searchTerm);
     });
 
-    const handleDeleteTest = async (testId: string, testTitle: string) => {
-      if (!confirm(`Are you sure you want to delete "${testTitle}"? This will also delete all associated questions and cannot be undone.`)) {
-        return;
-      }
-      
-      try {
-        await supabaseService.deleteTest(testId);
-        dispatch({ type: 'DELETE_TEST', payload: testId });
-        alert('Test deleted successfully!');
-      } catch (error) {
-        console.error('Failed to delete test:', error);
-        alert('Failed to delete test. Please try again.');
-      }
+    const handleDeleteTest = (testId: string, testTitle: string) => {
+      openDeleteModal(testId, testTitle, 'test');
     };
 
     return (
@@ -1203,6 +1218,45 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
       <div>{renderView()}</div>
+      
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteModal && itemToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+            
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
+              Delete {itemToDelete.type.charAt(0).toUpperCase() + itemToDelete.type.slice(1)}
+            </h3>
+            
+            <p className="text-slate-600 dark:text-slate-400 text-center mb-6">
+              Are you sure you want to delete <strong>"{itemToDelete.title}"</strong>? 
+              {itemToDelete.type === 'test' && ' This will also delete all associated questions and cannot be undone.'}
+              {itemToDelete.type === 'category' && ' This will also delete all associated tests and questions and cannot be undone.'}
+              {itemToDelete.type === 'question' && ' This action cannot be undone.'}
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
