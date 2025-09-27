@@ -58,7 +58,7 @@ const Header: React.FC = () => {
           </div>
           <span className="text-lg sm:text-xl font-bold text-white">PrepPro</span>
         </Link>
-        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
+        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleDarkMode}
@@ -91,7 +91,7 @@ const Header: React.FC = () => {
                     className="fixed inset-0 bg-black bg-opacity-25 z-40 sm:hidden"
                     onClick={() => setOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50">
+                  <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-6rem)] overflow-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 transform translate-x-0">
                     <div className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700 flex items-center justify-between">
                       <span>Notifications</span>
                       <button 
@@ -106,9 +106,9 @@ const Header: React.FC = () => {
                     {items.length === 0 ? (
                       <div className="p-4 text-sm text-slate-500 text-center">No notifications</div>
                     ) : (
-                      <div className="max-h-80 overflow-y-auto">
+                      <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
                         {items.map(n => (
-                          <div key={n.id} className="p-4 border-b dark:border-slate-700 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                          <div key={n.id} className="p-3 border-b dark:border-slate-700 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                             <div className="flex-shrink-0 mt-0.5">
                               <svg className={`w-4 h-4 ${n.is_read ? 'text-green-500' : 'text-slate-400'}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414l2.293 2.293 6.543-6.543a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -116,8 +116,8 @@ const Header: React.FC = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-slate-900 dark:text-white font-medium leading-tight">{n.title}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{n.message}</p>
-                              <p className="text-[11px] text-slate-400 mt-2">{new Date(n.created_at).toLocaleString()}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed break-words">{n.message}</p>
+                              <p className="text-[11px] text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
                             </div>
                           </div>
                         ))}
@@ -136,14 +136,12 @@ const Header: React.FC = () => {
               </div>
               <button
                 onClick={handleSignOut}
-                className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-all duration-200 text-sm flex items-center space-x-1 shadow-sm hover:shadow-md"
+                className="bg-red-500 hover:bg-red-600 text-white font-medium p-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                 title="Sign Out"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                 </svg>
-                <span className="hidden sm:inline">Sign Out</span>
-                <span className="sm:hidden">Out</span>
               </button>
             </>
           ) : (

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "create-table": "npx tsx scripts/create-test-access-table.ts"
+    "create-table": "npx tsx scripts/create-test-access-table.ts",
+    "auto-create": "node scripts/auto-create-table.js"
   },
   "dependencies": {
     "@google/genai": "^1.21.0",
