@@ -1046,17 +1046,17 @@ const AdminDashboard: React.FC = () => {
             
             {/* Subject Filter and Bulk Selection Controls */}
             {questionsForTest.length > 0 && (
-              <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+              <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                 {/* Subject Filter */}
-                <div className="mb-3">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                     Filter by Subject:
                   </label>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <select
                       value={subjectFilter}
                       onChange={(e) => setSubjectFilter(e.target.value)}
-                      className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
+                      className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="all">All Subjects ({questionsForTest.length})</option>
                       {uniqueSubjects.map(subject => {
@@ -1071,7 +1071,7 @@ const AdminDashboard: React.FC = () => {
                     {subjectFilter !== 'all' && (
                       <button
                         onClick={() => selectAllInSubject(questionsForTest, subjectFilter)}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                       >
                         Select All in {subjectFilter}
                       </button>
@@ -1080,17 +1080,17 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 
                 {/* Bulk Selection Controls */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <button
                       onClick={() => selectAllQuestions(filteredQuestions)}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline text-left"
                     >
                       Select All Filtered ({filteredQuestions.length})
                     </button>
                     <button
                       onClick={clearSelection}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
+                      className="text-sm text-gray-600 dark:text-gray-400 hover:underline text-left"
                     >
                       Clear Selection
                     </button>
@@ -1103,7 +1103,7 @@ const AdminDashboard: React.FC = () => {
                   {selectedQuestions.length > 0 && (
                     <button
                       onClick={() => setShowBulkDeleteModal(true)}
-                      className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                      className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
                     >
                       Delete Selected ({selectedQuestions.length})
                     </button>
@@ -1112,28 +1112,38 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
             
-             <ul className="space-y-2">
+             <div className="space-y-3">
                 {filteredQuestions.map(q => (
-                    <li key={q.id} className={`bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center ${selectedQuestions.includes(q.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                        <div className="flex items-center space-x-3 flex-1">
-                            <input
-                                type="checkbox"
-                                checked={selectedQuestions.includes(q.id)}
-                                onChange={() => toggleQuestionSelection(q.id)}
-                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                            />
-                            <span className="font-medium truncate pr-4 text-slate-900 dark:text-white">{q.questionText}</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded">
-                                {q.subject || 'General'}
-                            </span>
+                    <div key={q.id} className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedQuestions.includes(q.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                            <div className="flex items-start space-x-3 flex-1">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedQuestions.includes(q.id)}
+                                    onChange={() => toggleQuestionSelection(q.id)}
+                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1"
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white leading-relaxed">
+                                        {q.questionText}
+                                    </p>
+                                    <span className="inline-block px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-600 rounded mt-2">
+                                        {q.subject || 'General'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-2 sm:ml-4">
+                                <button onClick={() => openModal(q)} className="bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors" title="Edit Question">
+                                    <EditIcon />
+                                </button>
+                                <button onClick={() => dispatch({type: 'DELETE_QUESTION', payload: q.id})} className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors" title="Delete Question">
+                                    <TrashIcon />
+                                </button>
+                            </div>
                         </div>
-                        <div className="space-x-2 flex-shrink-0">
-                            <button onClick={() => openModal(q)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
-                            <button onClick={() => dispatch({type: 'DELETE_QUESTION', payload: q.id})} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                        </div>
-                    </li>
+                    </div>
                 ))}
-            </ul>
+            </div>
 
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Question' : 'Add Question'}>
                  <form onSubmit={handleSubmit} className="space-y-4">
