@@ -74,6 +74,8 @@ const AdminDashboard: React.FC = () => {
   
   // Subject manager state
   const [showSubjectManager, setShowSubjectManager] = useState(false);
+  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   
   const openModal = (item: Category | Test | Question | null = null) => {
     setEditingItem(item);
@@ -116,6 +118,52 @@ const AdminDashboard: React.FC = () => {
   const closeSuccessModal = () => {
     setShowSuccessModal(false);
     setSuccessMessage('');
+  };
+
+  // Bulk selection functions
+  const toggleQuestionSelection = (questionId: string) => {
+    setSelectedQuestions(prev => 
+      prev.includes(questionId) 
+        ? prev.filter(id => id !== questionId)
+        : [...prev, questionId]
+    );
+  };
+
+  const selectAllQuestions = (questions: Question[]) => {
+    setSelectedQuestions(questions.map(q => q.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedQuestions([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedQuestions.length === 0) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Delete selected questions
+      for (const questionId of selectedQuestions) {
+        await supabaseService.deleteQuestion(questionId);
+      }
+      
+      // Update state
+      dispatch({ 
+        type: 'DELETE_QUESTIONS', 
+        payload: selectedQuestions 
+      });
+      
+      setShowBulkDeleteModal(false);
+      setSelectedQuestions([]);
+      showSuccess(`Successfully deleted ${selectedQuestions.length} questions!`);
+      
+    } catch (error) {
+      console.error('Error deleting questions:', error);
+      alert('Failed to delete questions. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const confirmDelete = async () => {
@@ -973,10 +1021,57 @@ const AdminDashboard: React.FC = () => {
                     </button>
                 </div>
             </div>
+            
+            {/* Bulk Selection Controls */}
+            {questionsForTest.length > 0 && (
+              <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => selectAllQuestions(questionsForTest)}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Select All ({questionsForTest.length})
+                    </button>
+                    <button
+                      onClick={clearSelection}
+                      className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
+                    >
+                      Clear Selection
+                    </button>
+                    {selectedQuestions.length > 0 && (
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        {selectedQuestions.length} selected
+                      </span>
+                    )}
+                  </div>
+                  {selectedQuestions.length > 0 && (
+                    <button
+                      onClick={() => setShowBulkDeleteModal(true)}
+                      className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                    >
+                      Delete Selected ({selectedQuestions.length})
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            
              <ul className="space-y-2">
                 {questionsForTest.map(q => (
-                    <li key={q.id} className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center">
-                        <span className="font-medium truncate pr-4 text-slate-900 dark:text-white">{q.questionText}</span>
+                    <li key={q.id} className={`bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center ${selectedQuestions.includes(q.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                        <div className="flex items-center space-x-3 flex-1">
+                            <input
+                                type="checkbox"
+                                checked={selectedQuestions.includes(q.id)}
+                                onChange={() => toggleQuestionSelection(q.id)}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                            />
+                            <span className="font-medium truncate pr-4 text-slate-900 dark:text-white">{q.questionText}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded">
+                                {q.subject || 'General'}
+                            </span>
+                        </div>
                         <div className="space-x-2 flex-shrink-0">
                             <button onClick={() => openModal(q)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
                             <button onClick={() => dispatch({type: 'DELETE_QUESTION', payload: q.id})} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
@@ -1357,6 +1452,35 @@ const AdminDashboard: React.FC = () => {
           testTitle={selectedTestForQuestions.title}
           onClose={() => setShowSubjectManager(false)}
         />
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+              Confirm Bulk Delete
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300 mb-6">
+              Are you sure you want to delete {selectedQuestions.length} selected questions? 
+              This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-slate-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete {selectedQuestions.length} Questions
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

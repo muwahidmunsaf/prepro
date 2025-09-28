@@ -210,6 +210,30 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
     });
   };
 
+  const checkForDuplicates = (newQuestions: CSVQuestion[], existingQuestions: Question[]): {duplicates: CSVQuestion[], unique: CSVQuestion[]} => {
+    const duplicates: CSVQuestion[] = [];
+    const unique: CSVQuestion[] = [];
+    
+    for (const newQ of newQuestions) {
+      const isDuplicate = existingQuestions.some(existingQ => {
+        // Check if question text and all options match (ignore correct answer)
+        return existingQ.questionText.toLowerCase().trim() === newQ.questionText.toLowerCase().trim() &&
+               existingQ.options[0]?.toLowerCase().trim() === newQ.option1.toLowerCase().trim() &&
+               existingQ.options[1]?.toLowerCase().trim() === newQ.option2.toLowerCase().trim() &&
+               existingQ.options[2]?.toLowerCase().trim() === newQ.option3.toLowerCase().trim() &&
+               existingQ.options[3]?.toLowerCase().trim() === newQ.option4.toLowerCase().trim();
+      });
+      
+      if (isDuplicate) {
+        duplicates.push(newQ);
+      } else {
+        unique.push(newQ);
+      }
+    }
+    
+    return { duplicates, unique };
+  };
+
   const uploadCSV = async () => {
     if (!csvFile || !selectedSubjectForCSV) {
       alert('Please select both a subject and a CSV file.');
@@ -230,6 +254,23 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
         alert('No valid questions found in CSV file. Please check the format.');
         return;
       }
+
+      // Check for duplicates
+      const existingQuestions = state.questions.filter(q => q.testId === testId && q.subject === selectedSubjectForCSV);
+      const { duplicates, unique } = checkForDuplicates(questions, existingQuestions);
+      
+      console.log('Duplicate check:', { total: questions.length, duplicates: duplicates.length, unique: unique.length });
+      
+      if (duplicates.length > 0) {
+        const proceed = confirm(
+          `Found ${duplicates.length} duplicate questions and ${unique.length} unique questions.\n\n` +
+          `Duplicates will be skipped. Do you want to proceed with uploading ${unique.length} unique questions?`
+        );
+        
+        if (!proceed) {
+          return;
+        }
+      }
       
       // Get the next position for this subject
       const subjectQuestions = state.questions.filter(q => q.testId === testId && q.subject === selectedSubjectForCSV);
@@ -237,9 +278,9 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
       
       console.log('Starting position for subject:', nextPosition);
       
-      // Create questions
+      // Create questions (only unique ones)
       let successCount = 0;
-      for (const q of questions) {
+      for (const q of unique) {
         if (q.questionText.trim()) {
           console.log('Creating question:', q.questionText.substring(0, 50) + '...');
           await supabaseService.createQuestion({
@@ -256,7 +297,12 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
       }
       
       console.log('Upload completed. Success count:', successCount);
-      alert(`Successfully uploaded ${successCount} questions to ${selectedSubjectForCSV}!`);
+      
+      let message = `Successfully uploaded ${successCount} questions to ${selectedSubjectForCSV}!`;
+      if (duplicates.length > 0) {
+        message += `\n\n${duplicates.length} duplicate questions were skipped.`;
+      }
+      alert(message);
       
       // Reset form
       setShowCSVUpload(false);

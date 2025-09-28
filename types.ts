@@ -115,4 +115,5 @@ export type Action =
   | { type: 'ADD_TEST_SUBJECT'; payload: TestSubject }
   | { type: 'UPDATE_TEST_SUBJECT'; payload: TestSubject }
   | { type: 'DELETE_TEST_SUBJECT'; payload: string }
+  | { type: 'DELETE_QUESTIONS'; payload: string[] }
   | { type: 'TOGGLE_DARK_MODE' };

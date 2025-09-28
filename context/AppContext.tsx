@@ -145,6 +145,10 @@ const appReducer = (state: AppState, action: Action): AppState => {
       const newSubjects = (state.testSubjects || []).filter(s => s.id !== action.payload);
       return { ...state, testSubjects: newSubjects };
     }
+    case 'DELETE_QUESTIONS': {
+      const newQuestions = state.questions.filter(q => !action.payload.includes(q.id));
+      return { ...state, questions: newQuestions };
+    }
     case 'TOGGLE_DARK_MODE': {
       const newMode = !state.isDarkMode;
       localStorage.setItem('darkMode', JSON.stringify(newMode));
