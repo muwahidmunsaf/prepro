@@ -26,6 +26,22 @@ const TestScreen: React.FC = () => {
   const [isPausedByUser, setIsPausedByUser] = useState(false);
 
   const test = useMemo(() => state.tests.find(t => t.id === testId), [state.tests, testId]);
+
+  // Load test subjects when component mounts
+  useEffect(() => {
+    const loadTestSubjects = async () => {
+      if (testId && (!state.testSubjects || state.testSubjects.length === 0)) {
+        try {
+          const subjects = await supabaseService.fetchTestSubjects(testId);
+          dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
+        } catch (error) {
+          console.error('Failed to load test subjects:', error);
+        }
+      }
+    };
+    
+    loadTestSubjects();
+  }, [testId, state.testSubjects, dispatch]);
   
   // Use stable questions order - only shuffle once on first load, not on resume
   const testQuestions = useMemo(() => {
@@ -38,6 +54,10 @@ const TestScreen: React.FC = () => {
     const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
     const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
     
+    console.log('Test subjects found:', testSubjects);
+    console.log('Sorted subjects:', sortedSubjects);
+    console.log('All questions for test:', allQuestions.length);
+    
     let orderedQuestions: Question[] = [];
     
     // For each subject in order, get questions and shuffle them
@@ -47,8 +67,15 @@ const TestScreen: React.FC = () => {
       
       // Take only the target number of questions for this subject
       const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
-      orderedQuestions = [...orderedQuestions, ...shuffledSubjectQuestions.slice(0, questionsToTake)];
+      const selectedQuestions = shuffledSubjectQuestions.slice(0, questionsToTake);
+      
+      console.log(`Subject: ${subject.subjectName}, Found: ${subjectQuestions.length}, Taking: ${questionsToTake}`);
+      
+      orderedQuestions = [...orderedQuestions, ...selectedQuestions];
     }
+    
+    console.log('Final ordered questions:', orderedQuestions.length);
+    console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
     
     // If no subjects configured, fall back to old behavior
     if (sortedSubjects.length === 0) {
