@@ -173,8 +173,31 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
   const parseCSV = (csvText: string): CSVQuestion[] => {
     const lines = csvText.split('\n').filter(line => line.trim());
     
+    // Proper CSV parsing function that handles commas within quoted fields
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      result.push(current.trim());
+      return result;
+    };
+    
     return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const values = parseCSVLine(line);
       return {
         questionText: values[0] || '',
         option1: values[1] || '',
@@ -366,7 +389,8 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:text-white"
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    CSV format: Question, Option1, Option2, Option3, Option4, CorrectAnswer(1-4)
+                    CSV format: "Question", "Option1", "Option2", "Option3", "Option4", CorrectAnswer(1-4)<br/>
+                    <span className="text-yellow-600">Tip: Use quotes around fields containing commas</span>
                   </p>
                 </div>
                 
