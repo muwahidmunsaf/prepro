@@ -74,8 +74,32 @@ const ResultsPage: React.FC = () => {
       
       yPosition = 35; // Start questions below header
 
-      // Add questions in two columns
+      // Add questions in two columns with limit
+      const questionsPerColumn = 6;
+      const questionsPerPage = 12;
+      let questionCount = 0;
+      let pageQuestionCount = 0;
+
       result.questions.forEach((question, index) => {
+        // Check if we need to move to next column or page
+        if (pageQuestionCount >= questionsPerPage) {
+          pdf.addPage();
+          currentColumn = 0;
+          yPosition = 20;
+          pageQuestionCount = 0;
+        } else if (questionCount > 0 && questionCount % questionsPerColumn === 0) {
+          // Move to next column
+          if (currentColumn === 0) {
+            currentColumn = 1;
+            yPosition = 20;
+          } else {
+            pdf.addPage();
+            currentColumn = 0;
+            yPosition = 20;
+            pageQuestionCount = 0;
+          }
+        }
+
         // Question number and text
         addText(`${index + 1}. ${question.questionText}`, 10, true);
         yPosition += 2;
@@ -93,7 +117,9 @@ const ResultsPage: React.FC = () => {
           }
         });
 
-        yPosition += 3; // Minimal space between questions
+        yPosition += 4; // Space between questions
+        questionCount++;
+        pageQuestionCount++;
       });
 
       // Add summary at the end (centered)
