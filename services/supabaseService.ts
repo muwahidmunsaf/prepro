@@ -540,6 +540,18 @@ export async function upsertTestAccess(userId: string, testId: string, status: T
   }
 }
 
+// Question Count by Subject
+export async function fetchQuestionCountBySubject(testId: string, subjectName: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('questions')
+    .select('*', { count: 'exact' })
+    .eq('test_id', testId)
+    .eq('subject', subjectName);
+
+  if (error) throw error;
+  return count || 0;
+}
+
 // Test Subject Management
 export async function fetchTestSubjects(testId: string): Promise<TestSubject[]> {
   const { data, error } = await supabase

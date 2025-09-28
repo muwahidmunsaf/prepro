@@ -30,11 +30,36 @@ const TestScreen: React.FC = () => {
   // Use stable questions order - only shuffle once on first load, not on resume
   const testQuestions = useMemo(() => {
     if (!test || stableQuestions.length > 0) return stableQuestions;
+    
+    // Get all questions for this test
     const allQuestions = state.questions.filter(q => q.testId === testId);
-    const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
-    setStableQuestions(shuffled);
-    return shuffled;
-  }, [state.questions, testId, test, stableQuestions]);
+    
+    // Get subjects for this test in order
+    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
+    const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
+    
+    let orderedQuestions: Question[] = [];
+    
+    // For each subject in order, get questions and shuffle them
+    for (const subject of sortedSubjects) {
+      const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
+      const shuffledSubjectQuestions = shuffleArray(subjectQuestions);
+      
+      // Take only the target number of questions for this subject
+      const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
+      orderedQuestions = [...orderedQuestions, ...shuffledSubjectQuestions.slice(0, questionsToTake)];
+    }
+    
+    // If no subjects configured, fall back to old behavior
+    if (sortedSubjects.length === 0) {
+      const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
+      setStableQuestions(shuffled);
+      return shuffled;
+    }
+    
+    setStableQuestions(orderedQuestions);
+    return orderedQuestions;
+  }, [state.questions, state.testSubjects, testId, test, stableQuestions]);
 
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>(() => {
     const key = state.currentUser ? `pp_session_${state.currentUser.id}_${testId}` : '';
@@ -269,7 +294,7 @@ const TestScreen: React.FC = () => {
                         {q.questionText}
                     </p>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {q.options.map((option, optIndex) => {
                     const userAnswer = userAnswers.find(a => a.questionId === q.id);
                     const isSelected = userAnswer?.selectedAnswer === optIndex;

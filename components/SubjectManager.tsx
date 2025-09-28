@@ -30,6 +30,7 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [actualQuestionCounts, setActualQuestionCounts] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load subjects for this test
@@ -42,6 +43,19 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
       const testSubjects = await supabaseService.fetchTestSubjects(testId);
       setSubjects(testSubjects);
       dispatch({ type: 'SET_TEST_SUBJECTS', payload: testSubjects } as any);
+      
+      // Load actual question counts for each subject
+      const counts: Record<string, number> = {};
+      for (const subject of testSubjects) {
+        try {
+          const count = await supabaseService.fetchQuestionCountBySubject(testId, subject.subjectName);
+          counts[subject.id] = count;
+        } catch (error) {
+          console.error(`Failed to load count for subject ${subject.subjectName}:`, error);
+          counts[subject.id] = 0;
+        }
+      }
+      setActualQuestionCounts(counts);
     } catch (error) {
       console.error('Failed to load subjects:', error);
     }
@@ -232,6 +246,9 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
       // Refresh questions in context
       const updatedQuestions = await supabaseService.fetchQuestionsByTestId(testId);
       dispatch({ type: 'BULK_ADD_QUESTIONS', payload: updatedQuestions } as any);
+      
+      // Refresh actual question counts
+      await loadSubjects();
       
     } catch (error) {
       console.error('Failed to upload CSV:', error);
@@ -430,7 +447,7 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
                                 {subject.subjectName}
                               </h4>
                               <p className="text-sm text-slate-600 dark:text-slate-300">
-                                {subject.questionCount} questions • Order: {subject.displayOrder}
+                                Target: {subject.questionCount} • Uploaded: {actualQuestionCounts[subject.id] || 0} • Order: {subject.displayOrder}
                               </p>
                             </div>
                           )}
