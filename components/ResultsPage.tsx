@@ -25,89 +25,95 @@ const ResultsPage: React.FC = () => {
 
   const handleDownloadPDF = () => {
     try {
-      // Create PDF with text content
+      // Create PDF with two-column layout
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const columnWidth = (pageWidth - (margin * 3)) / 2; // 3 margins: left, middle, right
+      const lineHeight = 5;
       let yPosition = 20;
-      const lineHeight = 7;
-      const margin = 20;
-      const contentWidth = pageWidth - (margin * 2);
+      let currentColumn = 0; // 0 = left column, 1 = right column
 
       // Helper function to add text with word wrap
-      const addText = (text: string, fontSize: number = 12, isBold: boolean = false, color: string = '#000000') => {
+      const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: string = '#000000') => {
         pdf.setFontSize(fontSize);
         pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
         pdf.setTextColor(color);
         
-        const lines = pdf.splitTextToSize(text, contentWidth);
+        const xPosition = currentColumn === 0 ? margin : margin + columnWidth + margin;
+        const lines = pdf.splitTextToSize(text, columnWidth);
         
         for (const line of lines) {
           if (yPosition + lineHeight > pageHeight - margin) {
-            pdf.addPage();
-            yPosition = 20;
+            // Move to next column or new page
+            if (currentColumn === 0) {
+              currentColumn = 1;
+              yPosition = 20;
+            } else {
+              pdf.addPage();
+              currentColumn = 0;
+              yPosition = 20;
+            }
           }
-          pdf.text(line, margin, yPosition);
+          pdf.text(line, xPosition, yPosition);
           yPosition += lineHeight;
         }
-        yPosition += 2; // Add small spacing after text
+        yPosition += 1; // Minimal spacing
       };
 
-      // Add header
-      addText('PrepPro Test Questions', 18, true);
-      addText(`Test: ${test.title}`, 14, true);
-      addText(`Date: ${new Date(result.date).toLocaleDateString()}`, 12);
-      addText(`Score: ${result.score}/${result.totalQuestions} (${percentage}%)`, 12);
-      yPosition += 10;
+      // Add header (spanning both columns)
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PrepPro Test Questions', pageWidth / 2, 15, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Test: ${test.title}`, pageWidth / 2, 20, { align: 'center' });
+      pdf.text(`Date: ${new Date(result.date).toLocaleDateString()}`, pageWidth / 2, 25, { align: 'center' });
+      
+      yPosition = 35; // Start questions below header
 
-      // Add questions
+      // Add questions in two columns
       result.questions.forEach((question, index) => {
-        const userAnswer = result.answers.find(a => a.questionId === question.id);
-        const isCorrect = userAnswer?.selectedAnswer === question.correctAnswer;
-
         // Question number and text
-        addText(`Question ${index + 1}:`, 14, true);
-        addText(question.questionText, 12);
-        yPosition += 3;
+        addText(`${index + 1}. ${question.questionText}`, 10, true);
+        yPosition += 2;
 
-        // Options
+        // Options - only show correct answer highlighted
         question.options.forEach((option, optIndex) => {
-          const isSelected = userAnswer?.selectedAnswer === optIndex;
           const isCorrectAnswer = question.correctAnswer === optIndex;
-          
-          let optionText = `${String.fromCharCode(65 + optIndex)}. ${option}`;
+          const optionText = `${String.fromCharCode(65 + optIndex)}. ${option}`;
           
           if (isCorrectAnswer) {
             // Bold the correct answer
-            optionText = `${String.fromCharCode(65 + optIndex)}. ${option} (CORRECT ANSWER)`;
-            addText(optionText, 12, true, '#16a34a'); // Green and bold
-          } else if (isSelected) {
-            // Show user's incorrect answer
-            optionText = `${String.fromCharCode(65 + optIndex)}. ${option} (Your Answer)`;
-            addText(optionText, 12, false, '#dc2626'); // Red
+            addText(optionText, 10, true, '#16a34a'); // Green and bold
           } else {
-            addText(optionText, 12);
+            addText(optionText, 10);
           }
         });
 
-        // Add result indicator
-        if (isCorrect) {
-          addText('✓ Correct', 12, true, '#16a34a');
-        } else {
-          addText('✗ Incorrect', 12, true, '#dc2626');
-        }
-
-        yPosition += 8; // Space between questions
+        yPosition += 3; // Minimal space between questions
       });
 
-      // Add summary at the end
+      // Add summary at the end (centered)
       yPosition += 10;
-      addText('--- Test Summary ---', 14, true);
-      addText(`Total Questions: ${result.totalQuestions}`, 12);
-      addText(`Correct Answers: ${result.score}`, 12);
-      addText(`Incorrect Answers: ${result.totalQuestions - result.score}`, 12);
-      addText(`Percentage: ${percentage}%`, 12);
-      addText(`Status: ${percentage >= 70 ? 'PASSED' : 'FAILED'}`, 12, true, percentage >= 70 ? '#16a34a' : '#dc2626');
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('--- Test Summary ---', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 5;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Total Questions: ${result.totalQuestions}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 4;
+      pdf.text(`Correct Answers: ${result.score}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 4;
+      pdf.text(`Percentage: ${percentage}%`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 4;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(percentage >= 70 ? '#16a34a' : '#dc2626');
+      pdf.text(`Status: ${percentage >= 70 ? 'PASSED' : 'FAILED'}`, pageWidth / 2, yPosition, { align: 'center' });
 
       // Download the PDF
       const fileName = `PrepPro_Test_Questions_${test.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
