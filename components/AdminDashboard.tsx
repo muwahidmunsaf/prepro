@@ -5,6 +5,7 @@ import { useAppContext } from '../hooks/useAppContext';
 import { PlusIcon, EditIcon, TrashIcon, UserIcon, ChevronRightIcon, LockIcon } from './icons';
 import * as supabaseService from '../services/supabaseService';
 import type { Category, Test, Question, User, TestAccess } from '../types';
+import SubjectManager from './SubjectManager';
 
 type AdminView = 'categories' | 'tests' | 'questions' | 'users';
 
@@ -70,6 +71,9 @@ const AdminDashboard: React.FC = () => {
   // Success modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Subject manager state
+  const [showSubjectManager, setShowSubjectManager] = useState(false);
   
   const openModal = (item: Category | Test | Question | null = null) => {
     setEditingItem(item);
@@ -789,6 +793,8 @@ const AdminDashboard: React.FC = () => {
         questionText: (editingItem as Question)?.questionText || '',
         options: (editingItem as Question)?.options || ['', '', '', ''],
         correctAnswer: (editingItem as Question)?.correctAnswer ?? 0,
+        subject: (editingItem as Question)?.subject || 'General',
+        difficulty: (editingItem as Question)?.difficulty || 'Medium',
     });
     
     const questionsForTest = state.questions.filter(q => q.testId === selectedTestForQuestions!.id);
@@ -959,6 +965,12 @@ const AdminDashboard: React.FC = () => {
                 <div className="flex space-x-2">
                     <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"><PlusIcon/> <span>Add Question</span></button>
                     <button onClick={() => setIsBulkUploadOpen(true)} className="bg-sky-600 text-white py-2 px-4 rounded-lg hover:bg-sky-700">Bulk Upload</button>
+                    <button onClick={() => setShowSubjectManager(true)} className="bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <span>Manage Subjects</span>
+                    </button>
                 </div>
             </div>
              <ul className="space-y-2">
@@ -976,6 +988,37 @@ const AdminDashboard: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Question' : 'Add Question'}>
                  <form onSubmit={handleSubmit} className="space-y-4">
                     <textarea value={formState.questionText} onChange={e => setFormState(p => ({...p, questionText: e.target.value}))} placeholder="Question Text" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject</label>
+                            <select 
+                                value={formState.subject} 
+                                onChange={e => setFormState(p => ({...p, subject: e.target.value}))} 
+                                className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white"
+                            >
+                                <option value="General" className="text-slate-800 dark:text-white bg-slate-700">General</option>
+                                {state.testSubjects?.filter(s => s.testId === selectedTestForQuestions?.id).map(subject => (
+                                    <option key={subject.id} value={subject.subjectName} className="text-slate-800 dark:text-white bg-slate-700">
+                                        {subject.subjectName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Difficulty</label>
+                            <select 
+                                value={formState.difficulty} 
+                                onChange={e => setFormState(p => ({...p, difficulty: e.target.value}))} 
+                                className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white"
+                            >
+                                <option value="Easy" className="text-slate-800 dark:text-white bg-slate-700">Easy</option>
+                                <option value="Medium" className="text-slate-800 dark:text-white bg-slate-700">Medium</option>
+                                <option value="Hard" className="text-slate-800 dark:text-white bg-slate-700">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     {formState.options.map((opt, i) => (
                         <input key={i} type="text" value={opt} onChange={e => handleOptionChange(i, e.target.value)} placeholder={`Option ${i+1}`} className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 text-slate-800 dark:text-white placeholder-gray-400"/>
                     ))}
@@ -1305,6 +1348,15 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Subject Manager Modal */}
+      {showSubjectManager && selectedTestForQuestions && (
+        <SubjectManager
+          testId={selectedTestForQuestions.id}
+          testTitle={selectedTestForQuestions.title}
+          onClose={() => setShowSubjectManager(false)}
+        />
       )}
     </div>
   );

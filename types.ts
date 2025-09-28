@@ -82,6 +82,7 @@ export type AppState = {
   currentUser: User | null;
   categoryAccess?: CategoryAccess[];
   testAccess?: TestAccess[];
+  testSubjects?: TestSubject[];
   isDarkMode: boolean;
 };
 
@@ -110,4 +111,8 @@ export type Action =
   | { type: 'SET_TEST_ACCESS'; payload: TestAccess[] }
   | { type: 'ADD_TEST_ACCESS'; payload: TestAccess }
   | { type: 'UPDATE_TEST_ACCESS'; payload: TestAccess }
+  | { type: 'SET_TEST_SUBJECTS'; payload: TestSubject[] }
+  | { type: 'ADD_TEST_SUBJECT'; payload: TestSubject }
+  | { type: 'UPDATE_TEST_SUBJECT'; payload: TestSubject }
+  | { type: 'DELETE_TEST_SUBJECT'; payload: string }
   | { type: 'TOGGLE_DARK_MODE' };

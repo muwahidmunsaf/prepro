@@ -1,6 +1,6 @@
 
 import React, { createContext, useReducer, Dispatch, useEffect, useState } from 'react';
-import type { AppState, Action, User, CategoryAccess, TestAccess } from '../types';
+import type { AppState, Action, User, CategoryAccess, TestAccess, TestSubject } from '../types';
 import * as supabaseService from '../services/supabaseService';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -23,6 +23,7 @@ const initialState: AppState = {
   currentUser: getInitialUser(),
   categoryAccess: [],
   testAccess: [],
+  testSubjects: [],
   isDarkMode: (() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : true; // Default to dark mode
@@ -128,6 +129,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'UPDATE_TEST_ACCESS': {
       const newAccess = (state.testAccess || []).map(a => a.id === action.payload.id ? action.payload : a);
       return { ...state, testAccess: newAccess };
+    }
+    case 'SET_TEST_SUBJECTS': {
+      return { ...state, testSubjects: action.payload };
+    }
+    case 'ADD_TEST_SUBJECT': {
+      const newSubjects = [...(state.testSubjects || []), action.payload];
+      return { ...state, testSubjects: newSubjects };
+    }
+    case 'UPDATE_TEST_SUBJECT': {
+      const newSubjects = (state.testSubjects || []).map(s => s.id === action.payload.id ? action.payload : s);
+      return { ...state, testSubjects: newSubjects };
+    }
+    case 'DELETE_TEST_SUBJECT': {
+      const newSubjects = (state.testSubjects || []).filter(s => s.id !== action.payload);
+      return { ...state, testSubjects: newSubjects };
     }
     case 'TOGGLE_DARK_MODE': {
       const newMode = !state.isDarkMode;
