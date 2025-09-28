@@ -30,11 +30,9 @@ const TestScreen: React.FC = () => {
   // Load test subjects when component mounts
   useEffect(() => {
     const loadTestSubjects = async () => {
-      if (testId) {
+      if (testId && (!state.testSubjects || state.testSubjects.length === 0)) {
         try {
-          console.log('Loading test subjects for testId:', testId);
           const subjects = await supabaseService.fetchTestSubjects(testId);
-          console.log('Loaded subjects:', subjects);
           dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
         } catch (error) {
           console.error('Failed to load test subjects:', error);
@@ -43,22 +41,31 @@ const TestScreen: React.FC = () => {
     };
     
     loadTestSubjects();
-  }, [testId, dispatch]);
+  }, [testId, state.testSubjects, dispatch]);
 
   // Clear stable questions when subjects are loaded to force reordering
   useEffect(() => {
-    if (state.testSubjects && state.testSubjects.length > 0 && stableQuestions.length > 0) {
+    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
+    if (testSubjects.length > 0 && stableQuestions.length > 0) {
       console.log('Clearing stable questions to force subject-based ordering');
       setStableQuestions([]);
     }
-  }, [state.testSubjects, stableQuestions.length]);
+  }, [state.testSubjects, testId, stableQuestions.length]);
   
   // Use stable questions order - only shuffle once on first load, not on resume
   const testQuestions = useMemo(() => {
     if (!test) return [];
     
-    // If we have stable questions and no subjects configured, use them
-    if (stableQuestions.length > 0 && (!state.testSubjects || state.testSubjects.length === 0)) {
+    // If we have subjects configured, we need to reorder questions based on subject order
+    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
+    if (testSubjects.length > 0) {
+      // Clear stable questions to force reordering with subject configuration
+      if (stableQuestions.length > 0) {
+        setStableQuestions([]);
+        return [];
+      }
+    } else if (stableQuestions.length > 0) {
+      // No subjects configured, use existing stable questions
       return stableQuestions;
     }
     
@@ -69,9 +76,11 @@ const TestScreen: React.FC = () => {
     const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
     const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
     
+    console.log('=== SUBJECT ORDERING DEBUG ===');
     console.log('Test subjects found:', testSubjects);
     console.log('Sorted subjects:', sortedSubjects);
     console.log('All questions for test:', allQuestions.length);
+    console.log('Stable questions length:', stableQuestions.length);
     
     let orderedQuestions: Question[] = [];
     
