@@ -59,9 +59,9 @@ const TestScreen: React.FC = () => {
     // If we have subjects configured, we need to reorder questions based on subject order
     const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
     if (testSubjects.length > 0) {
-      // Clear stable questions to force reordering with subject configuration
+      // If we have stable questions but subjects are configured, we need to reorder
+      // The useEffect above will clear stable questions, so we return empty here
       if (stableQuestions.length > 0) {
-        setStableQuestions([]);
         return [];
       }
     } else if (stableQuestions.length > 0) {
@@ -72,8 +72,7 @@ const TestScreen: React.FC = () => {
     // Get all questions for this test
     const allQuestions = state.questions.filter(q => q.testId === testId);
     
-    // Get subjects for this test in order
-    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
+    // Get subjects for this test in order (already filtered above)
     const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
     
     console.log('=== SUBJECT ORDERING DEBUG ===');
