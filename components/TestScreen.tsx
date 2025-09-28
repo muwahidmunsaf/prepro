@@ -126,6 +126,13 @@ const TestScreen: React.FC = () => {
   });
   const [currentPage, setCurrentPage] = useState(0);
 
+  // Initialize userAnswers when testQuestions are loaded
+  useEffect(() => {
+    if (testQuestions.length > 0 && userAnswers.length === 0) {
+      setUserAnswers(testQuestions.map(q => ({ questionId: q.id, selectedAnswer: null })));
+    }
+  }, [testQuestions, userAnswers.length]);
+
   // Scroll to top when page changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -242,11 +249,26 @@ const TestScreen: React.FC = () => {
   // If the user left the page, show termination overlay instead of rendering test
 
   const handleAnswerSelect = (questionId: string, optionIndex: number) => {
-    setUserAnswers(prev =>
-      prev.map(ans =>
-        ans.questionId === questionId ? { ...ans, selectedAnswer: optionIndex } : ans
-      )
-    );
+    console.log('Answer selected:', { questionId, optionIndex });
+    setUserAnswers(prev => {
+      const existingAnswer = prev.find(ans => ans.questionId === questionId);
+      console.log('Existing answer:', existingAnswer);
+      console.log('Current userAnswers:', prev);
+      
+      if (existingAnswer) {
+        // Update existing answer
+        const updated = prev.map(ans =>
+          ans.questionId === questionId ? { ...ans, selectedAnswer: optionIndex } : ans
+        );
+        console.log('Updated answers:', updated);
+        return updated;
+      } else {
+        // Add new answer
+        const updated = [...prev, { questionId, selectedAnswer: optionIndex }];
+        console.log('Added new answer:', updated);
+        return updated;
+      }
+    });
   };
 
   const totalPages = Math.ceil(testQuestions.length / QUESTIONS_PER_PAGE);
