@@ -276,7 +276,7 @@ export async function fetchQuestions(): Promise<Question[]> {
     questionText: q.question_text,
     options: q.options,
     correctAnswer: q.correct_answer,
-    category: q.category || 'General',
+    subject: q.subject || 'General',
     position: q.position || 1,
     difficulty: q.difficulty || 'Medium'
   }));
@@ -297,7 +297,7 @@ export async function fetchQuestionsByTestId(testId: string): Promise<Question[]
     questionText: q.question_text,
     options: q.options,
     correctAnswer: q.correct_answer,
-    category: q.category || 'General',
+    subject: q.subject || 'General',
     position: q.position || 1,
     difficulty: q.difficulty || 'Medium'
   }));
@@ -311,7 +311,7 @@ export async function createQuestion(question: Omit<Question, 'id'>): Promise<Qu
       question_text: question.questionText,
       options: question.options,
       correct_answer: question.correctAnswer,
-      category: question.category || 'General',
+      subject: question.subject || 'General',
       position: question.position || 1,
       difficulty: question.difficulty || 'Medium'
     }])
@@ -339,7 +339,7 @@ export async function updateQuestion(question: Question): Promise<Question> {
       question_text: question.questionText,
       options: question.options,
       correct_answer: question.correctAnswer,
-      category: question.category || 'General',
+      subject: question.subject || 'General',
       position: question.position || 1,
       difficulty: question.difficulty || 'Medium'
     })
@@ -537,5 +537,104 @@ export async function upsertTestAccess(userId: string, testId: string, status: T
   } catch (error) {
     console.error('Failed to upsert test access:', error);
     throw error;
+  }
+}
+
+// Test Subject Management
+export async function fetchTestSubjects(testId: string): Promise<TestSubject[]> {
+  const { data, error } = await supabase
+    .from('test_subjects')
+    .select('*')
+    .eq('test_id', testId)
+    .order('display_order', { ascending: true });
+
+  if (error) throw error;
+
+  return data.map(subject => ({
+    id: subject.id.toString(),
+    testId: subject.test_id.toString(),
+    subjectName: subject.subject_name,
+    questionCount: subject.question_count,
+    displayOrder: subject.display_order,
+    createdAt: subject.created_at,
+    updatedAt: subject.updated_at
+  }));
+}
+
+export async function createTestSubject(testId: string, subjectName: string, questionCount: number, displayOrder: number): Promise<TestSubject> {
+  const { data, error } = await supabase
+    .from('test_subjects')
+    .insert([{
+      test_id: parseInt(testId),
+      subject_name: subjectName,
+      question_count: questionCount,
+      display_order: displayOrder
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id.toString(),
+    testId: data.test_id.toString(),
+    subjectName: data.subject_name,
+    questionCount: data.question_count,
+    displayOrder: data.display_order,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+export async function updateTestSubject(id: string, updates: Partial<TestSubject>): Promise<TestSubject> {
+  const { data, error } = await supabase
+    .from('test_subjects')
+    .update({
+      subject_name: updates.subjectName,
+      question_count: updates.questionCount,
+      display_order: updates.displayOrder,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id.toString(),
+    testId: data.test_id.toString(),
+    subjectName: data.subject_name,
+    questionCount: data.question_count,
+    displayOrder: data.display_order,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+export async function deleteTestSubject(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('test_subjects')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+export async function reorderTestSubjects(testId: string, subjectOrders: {id: string, displayOrder: number}[]): Promise<void> {
+  const updates = subjectOrders.map(item => 
+    supabase
+      .from('test_subjects')
+      .update({ display_order: item.displayOrder })
+      .eq('id', item.id)
+      .eq('test_id', testId)
+  );
+
+  const results = await Promise.all(updates);
+  
+  for (const result of results) {
+    if (result.error) {
+      throw result.error;
+    }
   }
 }

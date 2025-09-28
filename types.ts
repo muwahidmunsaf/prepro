@@ -26,9 +26,19 @@ export interface Question {
   questionText: string;
   options: string[];
   correctAnswer: number;
-  category?: string;
+  subject?: string;
   position?: number;
   difficulty?: string;
+}
+
+export interface TestSubject {
+  id: string;
+  testId: string;
+  subjectName: string;
+  questionCount: number;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserAnswer {
