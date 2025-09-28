@@ -85,17 +85,17 @@ const ResultsPage: React.FC = () => {
         if (pageQuestionCount >= questionsPerPage) {
           pdf.addPage();
           currentColumn = 0;
-          yPosition = 20;
+          yPosition = 35; // Start below header on new page
           pageQuestionCount = 0;
         } else if (questionCount > 0 && questionCount % questionsPerColumn === 0) {
           // Move to next column
           if (currentColumn === 0) {
             currentColumn = 1;
-            yPosition = 20;
+            yPosition = 35; // Start below header for right column
           } else {
             pdf.addPage();
             currentColumn = 0;
-            yPosition = 20;
+            yPosition = 35; // Start below header on new page
             pageQuestionCount = 0;
           }
         }
@@ -121,25 +121,6 @@ const ResultsPage: React.FC = () => {
         questionCount++;
         pageQuestionCount++;
       });
-
-      // Add summary at the end (centered)
-      yPosition += 10;
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('--- Test Summary ---', pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 5;
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Total Questions: ${result.totalQuestions}`, pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 4;
-      pdf.text(`Correct Answers: ${result.score}`, pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 4;
-      pdf.text(`Percentage: ${percentage}%`, pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 4;
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(percentage >= 70 ? '#16a34a' : '#dc2626');
-      pdf.text(`Status: ${percentage >= 70 ? 'PASSED' : 'FAILED'}`, pageWidth / 2, yPosition, { align: 'center' });
 
       // Download the PDF
       const fileName = `PrepPro_Test_Questions_${test.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -192,7 +173,7 @@ const ResultsPage: React.FC = () => {
               </div>
             </div>
         
-            <div className="no-print grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 text-center mb-6 sm:mb-8">
+            <div className="no-print grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-center mb-6 sm:mb-8">
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-lg">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
                       <span className="text-white font-bold text-sm sm:text-base">📝</span>
@@ -207,7 +188,14 @@ const ResultsPage: React.FC = () => {
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-1 sm:mb-2">Percentage</p>
                     <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${percentage >= 70 ? 'text-green-500' : 'text-red-500'}`}>{percentage}%</p>
                 </div>
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-lg sm:col-span-2 lg:col-span-1">
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-lg">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                      <span className="text-white font-bold text-sm sm:text-base">✓</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-1 sm:mb-2">Attempted</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-500">{result.answers.filter(a => a.selectedAnswer !== null).length}</p>
+                </div>
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-lg">
                     <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 ${percentage >= 70 ? 'bg-green-500' : 'bg-red-500'}`}>
                       <span className="text-white font-bold text-sm sm:text-base">{percentage >= 70 ? '✓' : '✗'}</span>
                     </div>
