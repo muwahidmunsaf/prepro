@@ -158,10 +158,9 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
 
   const parseCSV = (csvText: string): CSVQuestion[] => {
     const lines = csvText.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     
     return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
+      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
       return {
         questionText: values[0] || '',
         option1: values[1] || '',
@@ -169,26 +168,43 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
         option3: values[3] || '',
         option4: values[4] || '',
         correctAnswer: parseInt(values[5]) || 1,
-        difficulty: values[6] || 'Medium'
+        difficulty: 'Medium' // Default difficulty
       };
     });
   };
 
   const uploadCSV = async () => {
-    if (!csvFile || !selectedSubjectForCSV) return;
+    if (!csvFile || !selectedSubjectForCSV) {
+      alert('Please select both a subject and a CSV file.');
+      return;
+    }
     
     try {
       setIsLoading(true);
+      console.log('Starting CSV upload...', { csvFile: csvFile.name, subject: selectedSubjectForCSV });
+      
       const text = await csvFile.text();
+      console.log('CSV text loaded:', text.substring(0, 200) + '...');
+      
       const questions = parseCSV(text);
+      console.log('Parsed questions:', questions.length, questions);
+      
+      if (questions.length === 0) {
+        alert('No valid questions found in CSV file. Please check the format.');
+        return;
+      }
       
       // Get the next position for this subject
       const subjectQuestions = state.questions.filter(q => q.testId === testId && q.subject === selectedSubjectForCSV);
       let nextPosition = Math.max(...subjectQuestions.map(q => q.position || 0), 0) + 1;
       
+      console.log('Starting position for subject:', nextPosition);
+      
       // Create questions
+      let successCount = 0;
       for (const q of questions) {
         if (q.questionText.trim()) {
+          console.log('Creating question:', q.questionText.substring(0, 50) + '...');
           await supabaseService.createQuestion({
             testId,
             questionText: q.questionText,
@@ -198,13 +214,20 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
             position: nextPosition++,
             difficulty: q.difficulty
           });
+          successCount++;
         }
       }
       
-      alert(`Successfully uploaded ${questions.length} questions to ${selectedSubjectForCSV}!`);
+      console.log('Upload completed. Success count:', successCount);
+      alert(`Successfully uploaded ${successCount} questions to ${selectedSubjectForCSV}!`);
+      
+      // Reset form
       setShowCSVUpload(false);
       setCsvFile(null);
       setSelectedSubjectForCSV('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       
       // Refresh questions in context
       const updatedQuestions = await supabaseService.fetchQuestionsByTestId(testId);
@@ -212,7 +235,7 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
       
     } catch (error) {
       console.error('Failed to upload CSV:', error);
-      alert('Failed to upload CSV. Please check the format and try again.');
+      alert(`Failed to upload CSV: ${error.message || 'Please check the format and try again.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -326,7 +349,7 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:text-white"
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    CSV format: Question, Option1, Option2, Option3, Option4, CorrectAnswer(1-4), Difficulty
+                    CSV format: Question, Option1, Option2, Option3, Option4, CorrectAnswer(1-4)
                   </p>
                 </div>
                 
