@@ -44,6 +44,14 @@ const TestScreen: React.FC = () => {
     
     loadTestSubjects();
   }, [testId, dispatch]);
+
+  // Clear stable questions when subjects are loaded to force reordering
+  useEffect(() => {
+    if (state.testSubjects && state.testSubjects.length > 0 && stableQuestions.length > 0) {
+      console.log('Clearing stable questions to force subject-based ordering');
+      setStableQuestions([]);
+    }
+  }, [state.testSubjects, stableQuestions.length]);
   
   // Use stable questions order - only shuffle once on first load, not on resume
   const testQuestions = useMemo(() => {
@@ -52,12 +60,6 @@ const TestScreen: React.FC = () => {
     // If we have stable questions and no subjects configured, use them
     if (stableQuestions.length > 0 && (!state.testSubjects || state.testSubjects.length === 0)) {
       return stableQuestions;
-    }
-    
-    // If we have subjects configured, always reorder based on subjects
-    if (stableQuestions.length > 0 && state.testSubjects && state.testSubjects.length > 0) {
-      // Clear stable questions to force reordering
-      setStableQuestions([]);
     }
     
     // Get all questions for this test
