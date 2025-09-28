@@ -265,6 +265,7 @@ export async function fetchQuestions(): Promise<Question[]> {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
+    .order('position', { ascending: true })
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -274,7 +275,10 @@ export async function fetchQuestions(): Promise<Question[]> {
     testId: q.test_id.toString(),
     questionText: q.question_text,
     options: q.options,
-    correctAnswer: q.correct_answer
+    correctAnswer: q.correct_answer,
+    category: q.category || 'General',
+    position: q.position || 1,
+    difficulty: q.difficulty || 'Medium'
   }));
 }
 
@@ -282,7 +286,8 @@ export async function fetchQuestionsByTestId(testId: string): Promise<Question[]
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .eq('test_id', testId);
+    .eq('test_id', testId)
+    .order('position', { ascending: true });
 
   if (error) throw error;
 
@@ -291,7 +296,10 @@ export async function fetchQuestionsByTestId(testId: string): Promise<Question[]
     testId: q.test_id.toString(),
     questionText: q.question_text,
     options: q.options,
-    correctAnswer: q.correct_answer
+    correctAnswer: q.correct_answer,
+    category: q.category || 'General',
+    position: q.position || 1,
+    difficulty: q.difficulty || 'Medium'
   }));
 }
 
@@ -302,7 +310,10 @@ export async function createQuestion(question: Omit<Question, 'id'>): Promise<Qu
       test_id: parseInt(question.testId),
       question_text: question.questionText,
       options: question.options,
-      correct_answer: question.correctAnswer
+      correct_answer: question.correctAnswer,
+      category: question.category || 'General',
+      position: question.position || 1,
+      difficulty: question.difficulty || 'Medium'
     }])
     .select()
     .single();
@@ -314,7 +325,10 @@ export async function createQuestion(question: Omit<Question, 'id'>): Promise<Qu
     testId: data.test_id.toString(),
     questionText: data.question_text,
     options: data.options,
-    correctAnswer: data.correct_answer
+    correctAnswer: data.correct_answer,
+    category: data.category || 'General',
+    position: data.position || 1,
+    difficulty: data.difficulty || 'Medium'
   };
 }
 
@@ -324,7 +338,10 @@ export async function updateQuestion(question: Question): Promise<Question> {
     .update({
       question_text: question.questionText,
       options: question.options,
-      correct_answer: question.correctAnswer
+      correct_answer: question.correctAnswer,
+      category: question.category || 'General',
+      position: question.position || 1,
+      difficulty: question.difficulty || 'Medium'
     })
     .eq('id', question.id)
     .select()
@@ -337,7 +354,10 @@ export async function updateQuestion(question: Question): Promise<Question> {
     testId: data.test_id.toString(),
     questionText: data.question_text,
     options: data.options,
-    correctAnswer: data.correct_answer
+    correctAnswer: data.correct_answer,
+    category: data.category || 'General',
+    position: data.position || 1,
+    difficulty: data.difficulty || 'Medium'
   };
 }
 

@@ -26,6 +26,9 @@ export interface Question {
   questionText: string;
   options: string[];
   correctAnswer: number;
+  category?: string;
+  position?: number;
+  difficulty?: string;
 }
 
 export interface UserAnswer {
