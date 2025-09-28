@@ -204,7 +204,7 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
         option2: values[2] || '',
         option3: values[3] || '',
         option4: values[4] || '',
-        correctAnswer: parseInt(values[5]) || 1,
+        correctAnswer: parseInt(values[5]) || 0,
         difficulty: 'Medium' // Default difficulty
       };
     });
@@ -246,7 +246,7 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
             testId,
             questionText: q.questionText,
             options: [q.option1, q.option2, q.option3, q.option4],
-            correctAnswer: q.correctAnswer - 1, // Convert to 0-based index
+            correctAnswer: q.correctAnswer, // Already 0-based index
             subject: selectedSubjectForCSV,
             position: nextPosition++,
             difficulty: q.difficulty
@@ -389,8 +389,9 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:text-white"
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    CSV format: "Question", "Option1", "Option2", "Option3", "Option4", CorrectAnswer(1-4)<br/>
-                    <span className="text-yellow-600">Tip: Use quotes around fields containing commas</span>
+                    CSV format: "Question", "Option1", "Option2", "Option3", "Option4", CorrectAnswer(0-3)<br/>
+                    <span className="text-yellow-600">Tip: Use quotes around fields containing commas</span><br/>
+                    <span className="text-blue-600">CorrectAnswer: 0=A, 1=B, 2=C, 3=D</span>
                   </p>
                 </div>
                 
