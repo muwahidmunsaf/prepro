@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../hooks/useAppContext';
 import * as supabaseService from '../services/supabaseService';
 import type { TestSubject } from '../types';
 
