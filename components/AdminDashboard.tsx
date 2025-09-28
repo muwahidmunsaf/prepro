@@ -76,6 +76,7 @@ const AdminDashboard: React.FC = () => {
   const [showSubjectManager, setShowSubjectManager] = useState(false);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [subjectFilter, setSubjectFilter] = useState<string>('all');
   
   const openModal = (item: Category | Test | Question | null = null) => {
     setEditingItem(item);
@@ -131,6 +132,11 @@ const AdminDashboard: React.FC = () => {
 
   const selectAllQuestions = (questions: Question[]) => {
     setSelectedQuestions(questions.map(q => q.id));
+  };
+
+  const selectAllInSubject = (questions: Question[], subject: string) => {
+    const subjectQuestions = questions.filter(q => q.subject === subject);
+    setSelectedQuestions(subjectQuestions.map(q => q.id));
   };
 
   const clearSelection = () => {
@@ -799,7 +805,7 @@ const AdminDashboard: React.FC = () => {
                             <p className="text-sm text-slate-500 dark:text-slate-400">{state.categories.find(c => c.id === test.categoryId)?.name} • {state.questions.filter(q => q.testId === test.id).length} questions</p>
                         </div>
                         <div className="flex flex-wrap gap-2 sm:gap-2">
-                           <button onClick={() => { setSelectedTestForQuestions(test); setCurrentView('questions'); }} className="text-blue-500 hover:text-blue-700 text-sm px-3 py-1 rounded-md border border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                           <button onClick={() => { setSelectedTestForQuestions(test); setCurrentView('questions'); setSubjectFilter('all'); setSelectedQuestions([]); }} className="text-blue-500 hover:text-blue-700 text-sm px-3 py-1 rounded-md border border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                Manage Questions
                            </button>
                             <button onClick={() => openModal(test)} className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
@@ -846,6 +852,14 @@ const AdminDashboard: React.FC = () => {
     });
     
     const questionsForTest = state.questions.filter(q => q.testId === selectedTestForQuestions!.id);
+    
+    // Filter questions by subject
+    const filteredQuestions = subjectFilter === 'all' 
+      ? questionsForTest 
+      : questionsForTest.filter(q => q.subject === subjectFilter);
+    
+    // Get unique subjects for filter dropdown
+    const uniqueSubjects = Array.from(new Set(questionsForTest.map(q => q.subject || 'General')));
     
     const handleOptionChange = (index: number, value: string) => {
         const newOptions = [...formState.options];
@@ -1022,16 +1036,49 @@ const AdminDashboard: React.FC = () => {
                 </div>
             </div>
             
-            {/* Bulk Selection Controls */}
+            {/* Subject Filter and Bulk Selection Controls */}
             {questionsForTest.length > 0 && (
               <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
+                {/* Subject Filter */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Filter by Subject:
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={subjectFilter}
+                      onChange={(e) => setSubjectFilter(e.target.value)}
+                      className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
+                    >
+                      <option value="all">All Subjects ({questionsForTest.length})</option>
+                      {uniqueSubjects.map(subject => {
+                        const count = questionsForTest.filter(q => q.subject === subject).length;
+                        return (
+                          <option key={subject} value={subject}>
+                            {subject} ({count})
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {subjectFilter !== 'all' && (
+                      <button
+                        onClick={() => selectAllInSubject(questionsForTest, subjectFilter)}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                      >
+                        Select All in {subjectFilter}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Bulk Selection Controls */}
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <button
-                      onClick={() => selectAllQuestions(questionsForTest)}
+                      onClick={() => selectAllQuestions(filteredQuestions)}
                       className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Select All ({questionsForTest.length})
+                      Select All Filtered ({filteredQuestions.length})
                     </button>
                     <button
                       onClick={clearSelection}
@@ -1058,7 +1105,7 @@ const AdminDashboard: React.FC = () => {
             )}
             
              <ul className="space-y-2">
-                {questionsForTest.map(q => (
+                {filteredQuestions.map(q => (
                     <li key={q.id} className={`bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center ${selectedQuestions.includes(q.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
                         <div className="flex items-center space-x-3 flex-1">
                             <input
@@ -1245,7 +1292,9 @@ const AdminDashboard: React.FC = () => {
                   if (viewingCategoryTests) setPreviousCategoryIdForQuestions(viewingCategoryTests.id);
                   setViewingCategoryTests(null); 
                   setSelectedTestForQuestions(test); 
-                  setCurrentView('questions'); 
+                  setCurrentView('questions');
+                  setSubjectFilter('all'); // Reset filter when switching tests
+                  setSelectedQuestions([]); // Clear selection when switching tests 
                     }} 
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                   >
