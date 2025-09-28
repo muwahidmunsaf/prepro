@@ -56,24 +56,16 @@ const TestScreen: React.FC = () => {
   const testQuestions = useMemo(() => {
     if (!test) return [];
     
-    // If we have subjects configured, we need to reorder questions based on subject order
-    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
-    if (testSubjects.length > 0) {
-      // If we have stable questions but subjects are configured, we need to reorder
-      // The useEffect above will clear stable questions, so we return empty here to trigger reordering
-      if (stableQuestions.length > 0) {
-        return [];
-      }
-      // If no stable questions, proceed to calculate ordered questions
-    } else if (stableQuestions.length > 0) {
-      // No subjects configured, use existing stable questions
+    // If we already have stable questions, use them
+    if (stableQuestions.length > 0) {
       return stableQuestions;
     }
     
     // Get all questions for this test
     const allQuestions = state.questions.filter(q => q.testId === testId);
     
-    // Get subjects for this test in order (already filtered above)
+    // Get subjects for this test in order
+    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
     const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
     
     console.log('=== SUBJECT ORDERING DEBUG ===');
@@ -81,6 +73,13 @@ const TestScreen: React.FC = () => {
     console.log('Sorted subjects:', sortedSubjects);
     console.log('All questions for test:', allQuestions.length);
     console.log('Stable questions length:', stableQuestions.length);
+    
+    // If no subjects configured, fall back to old behavior
+    if (sortedSubjects.length === 0) {
+      const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
+      setStableQuestions(shuffled);
+      return shuffled;
+    }
     
     let orderedQuestions: Question[] = [];
     
@@ -100,13 +99,6 @@ const TestScreen: React.FC = () => {
     
     console.log('Final ordered questions:', orderedQuestions.length);
     console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
-    
-    // If no subjects configured, fall back to old behavior
-    if (sortedSubjects.length === 0) {
-      const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
-      setStableQuestions(shuffled);
-      return shuffled;
-    }
     
     setStableQuestions(orderedQuestions);
     return orderedQuestions;
