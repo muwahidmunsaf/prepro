@@ -60,10 +60,11 @@ const TestScreen: React.FC = () => {
     const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
     if (testSubjects.length > 0) {
       // If we have stable questions but subjects are configured, we need to reorder
-      // The useEffect above will clear stable questions, so we return empty here
+      // The useEffect above will clear stable questions, so we return empty here to trigger reordering
       if (stableQuestions.length > 0) {
         return [];
       }
+      // If no stable questions, proceed to calculate ordered questions
     } else if (stableQuestions.length > 0) {
       // No subjects configured, use existing stable questions
       return stableQuestions;
