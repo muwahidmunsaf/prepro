@@ -147,9 +147,7 @@ const AdminDashboard: React.FC = () => {
     if (selectedQuestions.length === 0) return;
     
     try {
-      setIsLoading(true);
-      
-      // Delete selected questions
+      // Delete selected questions (soft delete to preserve user records)
       for (const questionId of selectedQuestions) {
         await supabaseService.deleteQuestion(questionId);
       }
@@ -162,13 +160,11 @@ const AdminDashboard: React.FC = () => {
       
       setShowBulkDeleteModal(false);
       setSelectedQuestions([]);
-      showSuccess(`Successfully deleted ${selectedQuestions.length} questions!`);
+      showSuccess(`Successfully deleted ${selectedQuestions.length} questions! User test records have been preserved.`);
       
     } catch (error) {
       console.error('Error deleting questions:', error);
       alert('Failed to delete questions. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -1010,8 +1006,8 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
-                <div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+                <div className="flex-1">
                   <button onClick={() => {
                     if (previousCategoryIdForQuestions) {
                       const cat = state.categories.find(c => c.id === previousCategoryIdForQuestions) || null;
@@ -1021,17 +1017,29 @@ const AdminDashboard: React.FC = () => {
                     } else {
                       setCurrentView('tests');
                     }
-                  }} className="text-indigo-600 hover:text-indigo-800 mb-2">&larr; Back</button>
-                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Manage Questions for "{selectedTestForQuestions.title}"</h2>
+                  }} className="text-indigo-600 hover:text-indigo-800 mb-3 flex items-center gap-2 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back
+                  </button>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white mb-2">Manage Questions</h2>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">"{selectedTestForQuestions.title}"</p>
                 </div>
-                <div className="flex space-x-2">
-                    <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-indigo-700"><PlusIcon/> <span>Add Question</span></button>
-                    <button onClick={() => setIsBulkUploadOpen(true)} className="bg-sky-600 text-white py-2 px-4 rounded-lg hover:bg-sky-700">Bulk Upload</button>
-                    <button onClick={() => setShowSubjectManager(true)} className="bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <button onClick={() => openModal()} className="bg-indigo-600 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors text-sm sm:text-base">
+                      <PlusIcon/> 
+                      <span>Add Question</span>
+                    </button>
+                    <button onClick={() => setIsBulkUploadOpen(true)} className="bg-sky-600 text-white py-2 px-4 rounded-lg hover:bg-sky-700 transition-colors text-sm sm:text-base">
+                      Bulk Upload
+                    </button>
+                    <button onClick={() => setShowSubjectManager(true)} className="bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2 transition-colors text-sm sm:text-base">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
-                        <span>Manage Subjects</span>
+                        <span className="hidden sm:inline">Manage Subjects</span>
+                        <span className="sm:hidden">Subjects</span>
                     </button>
                 </div>
             </div>

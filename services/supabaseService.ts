@@ -265,6 +265,7 @@ export async function fetchQuestions(): Promise<Question[]> {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
+    .eq('deleted', false)
     .order('position', { ascending: true })
     .order('created_at', { ascending: false });
 
@@ -287,6 +288,7 @@ export async function fetchQuestionsByTestId(testId: string): Promise<Question[]
     .from('questions')
     .select('*')
     .eq('test_id', testId)
+    .eq('deleted', false)
     .order('position', { ascending: true });
 
   if (error) throw error;
@@ -362,9 +364,13 @@ export async function updateQuestion(question: Question): Promise<Question> {
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
+  // Soft delete to preserve user test records
   const { error } = await supabase
     .from('questions')
-    .delete()
+    .update({ 
+      deleted: true, 
+      deleted_at: new Date().toISOString() 
+    })
     .eq('id', id);
 
   if (error) throw error;
