@@ -552,6 +552,47 @@ export async function fetchQuestionCountBySubject(testId: string, subjectName: s
   return count || 0;
 }
 
+// Question Usage Tracking
+export async function trackQuestionUsage(userId: string, questionId: string, testId: string, subjectName: string): Promise<void> {
+  const { error } = await supabase
+    .from('question_usage')
+    .upsert({
+      user_id: parseInt(userId),
+      question_id: parseInt(questionId),
+      test_id: parseInt(testId),
+      subject_name: subjectName,
+      used_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id,question_id,test_id'
+    });
+
+  if (error) throw error;
+}
+
+export async function getUsedQuestionIds(userId: string, testId: string, subjectName: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('question_usage')
+    .select('question_id')
+    .eq('user_id', userId)
+    .eq('test_id', testId)
+    .eq('subject_name', subjectName);
+
+  if (error) throw error;
+  return data.map(item => item.question_id.toString());
+}
+
+export async function getUnusedQuestions(userId: string, testId: string, subjectName: string): Promise<Question[]> {
+  // Get all questions for this test and subject
+  const allQuestions = await fetchQuestionsByTestId(testId);
+  const subjectQuestions = allQuestions.filter(q => q.subject === subjectName);
+  
+  // Get used question IDs
+  const usedQuestionIds = await getUsedQuestionIds(userId, testId, subjectName);
+  
+  // Return questions that haven't been used
+  return subjectQuestions.filter(q => !usedQuestionIds.includes(q.id));
+}
+
 // Test Subject Management
 export async function fetchTestSubjects(testId: string): Promise<TestSubject[]> {
   const { data, error } = await supabase

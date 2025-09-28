@@ -81,28 +81,68 @@ const TestScreen: React.FC = () => {
       return shuffled;
     }
     
-    let orderedQuestions: Question[] = [];
-    
-    // For each subject in order, get questions and shuffle them
-    for (const subject of sortedSubjects) {
-      const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
-      const shuffledSubjectQuestions = shuffleArray(subjectQuestions);
-      
-      // Take only the target number of questions for this subject
-      const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
-      const selectedQuestions = shuffledSubjectQuestions.slice(0, questionsToTake);
-      
-      console.log(`Subject: ${subject.subjectName}, Found: ${subjectQuestions.length}, Taking: ${questionsToTake}`);
-      
-      orderedQuestions = [...orderedQuestions, ...selectedQuestions];
-    }
-    
-    console.log('Final ordered questions:', orderedQuestions.length);
-    console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
-    
-    setStableQuestions(orderedQuestions);
-    return orderedQuestions;
+    // Return empty for now, will be populated by useEffect
+    return [];
   }, [state.questions, state.testSubjects, testId, test, stableQuestions]);
+
+  // Load questions with smart rotation when dependencies change
+  useEffect(() => {
+    const loadQuestionsWithSmartRotation = async () => {
+      if (!test || !state.currentUser || stableQuestions.length > 0) return;
+      
+      const allQuestions = state.questions.filter(q => q.testId === testId);
+      const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
+      const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
+      
+      if (sortedSubjects.length === 0) {
+        const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
+        setStableQuestions(shuffled);
+        return;
+      }
+      
+      let orderedQuestions: Question[] = [];
+      
+      // For each subject in order, get questions with smart rotation
+      for (const subject of sortedSubjects) {
+        const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
+        
+        // Get unused questions for this user and subject
+        const unusedQuestions = await supabaseService.getUnusedQuestions(
+          state.currentUser.id, 
+          testId, 
+          subject.subjectName
+        );
+        
+        let questionsToUse: Question[] = [];
+        
+        if (unusedQuestions.length >= subject.questionCount) {
+          // Use only unused questions
+          questionsToUse = shuffleArray(unusedQuestions).slice(0, subject.questionCount);
+          console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} available)`);
+        } else {
+          // Use all unused questions + some random from used questions
+          const usedQuestions = subjectQuestions.filter(q => !unusedQuestions.some(uq => uq.id === q.id));
+          const shuffledUsed = shuffleArray(usedQuestions);
+          const remainingNeeded = subject.questionCount - unusedQuestions.length;
+          
+          questionsToUse = [
+            ...shuffleArray(unusedQuestions),
+            ...shuffledUsed.slice(0, remainingNeeded)
+          ];
+          console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions`);
+        }
+        
+        orderedQuestions = [...orderedQuestions, ...questionsToUse];
+      }
+      
+      console.log('Final ordered questions:', orderedQuestions.length);
+      console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
+      
+      setStableQuestions(orderedQuestions);
+    };
+    
+    loadQuestionsWithSmartRotation();
+  }, [test, state.currentUser, state.questions, state.testSubjects, testId, stableQuestions.length]);
 
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>(() => {
     const key = state.currentUser ? `pp_session_${state.currentUser.id}_${testId}` : '';
@@ -235,6 +275,21 @@ const TestScreen: React.FC = () => {
 
       const newResult = await supabaseService.createResult(resultData);
       dispatch({ type: 'ADD_RESULT', payload: newResult });
+      
+      // Track question usage for smart rotation
+      for (const question of testQuestions) {
+        try {
+          await supabaseService.trackQuestionUsage(
+            state.currentUser.id,
+            question.id,
+            testId,
+            question.subject || 'General'
+          );
+        } catch (error) {
+          console.error('Error tracking question usage:', error);
+        }
+      }
+      
       clearSession();
       navigate(`/results/${newResult.id}`);
       // Scroll to top after navigation
