@@ -30,9 +30,11 @@ const TestScreen: React.FC = () => {
   // Load test subjects when component mounts
   useEffect(() => {
     const loadTestSubjects = async () => {
-      if (testId && (!state.testSubjects || state.testSubjects.length === 0)) {
+      if (testId) {
         try {
+          console.log('Loading test subjects for testId:', testId);
           const subjects = await supabaseService.fetchTestSubjects(testId);
+          console.log('Loaded subjects:', subjects);
           dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
         } catch (error) {
           console.error('Failed to load test subjects:', error);
@@ -41,11 +43,22 @@ const TestScreen: React.FC = () => {
     };
     
     loadTestSubjects();
-  }, [testId, state.testSubjects, dispatch]);
+  }, [testId, dispatch]);
   
   // Use stable questions order - only shuffle once on first load, not on resume
   const testQuestions = useMemo(() => {
-    if (!test || stableQuestions.length > 0) return stableQuestions;
+    if (!test) return [];
+    
+    // If we have stable questions and no subjects configured, use them
+    if (stableQuestions.length > 0 && (!state.testSubjects || state.testSubjects.length === 0)) {
+      return stableQuestions;
+    }
+    
+    // If we have subjects configured, always reorder based on subjects
+    if (stableQuestions.length > 0 && state.testSubjects && state.testSubjects.length > 0) {
+      // Clear stable questions to force reordering
+      setStableQuestions([]);
+    }
     
     // Get all questions for this test
     const allQuestions = state.questions.filter(q => q.testId === testId);
