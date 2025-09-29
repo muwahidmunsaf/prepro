@@ -68,96 +68,37 @@ const TestScreen: React.FC = () => {
     const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
     const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
     
-    console.log('=== SUBJECT ORDERING DEBUG ===');
-    console.log('Test subjects found:', testSubjects);
-    console.log('Sorted subjects:', sortedSubjects);
-    console.log('All questions for test:', allQuestions.length);
-    console.log('Stable questions length:', stableQuestions.length);
-    
-    // If no subjects configured, fall back to old behavior
+    // If no subjects configured, use simple shuffling immediately
     if (sortedSubjects.length === 0) {
       const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
       setStableQuestions(shuffled);
       return shuffled;
     }
     
-    // For subjects configured, return all questions for now (useEffect will handle ordering)
-    return allQuestions;
+    // For subjects configured, use simple subject-based shuffling immediately
+    let orderedQuestions: Question[] = [];
+    
+    for (const subject of sortedSubjects) {
+      const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
+      const shuffledSubjectQuestions = shuffleArray(subjectQuestions);
+      const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
+      const selectedQuestions = shuffledSubjectQuestions.slice(0, questionsToTake);
+      orderedQuestions = [...orderedQuestions, ...selectedQuestions];
+    }
+    
+    console.log('=== SUBJECT ORDERING DEBUG ===');
+    console.log('Test subjects found:', testSubjects);
+    console.log('Sorted subjects:', sortedSubjects);
+    console.log('All questions for test:', allQuestions.length);
+    console.log('Final ordered questions:', orderedQuestions.length);
+    console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
+    
+    setStableQuestions(orderedQuestions);
+    return orderedQuestions;
   }, [state.questions, state.testSubjects, testId, test, stableQuestions]);
 
-  // Load questions with smart rotation when dependencies change
-  useEffect(() => {
-    const loadQuestionsWithSmartRotation = async () => {
-      if (!test || !state.currentUser) return;
-      
-      const allQuestions = state.questions.filter(q => q.testId === testId);
-      const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
-      const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
-      
-      // If no subjects configured, use simple shuffling
-      if (sortedSubjects.length === 0) {
-        const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
-        setStableQuestions(shuffled);
-        return;
-      }
-      
-      // If we already have stable questions and they match our current setup, don't reload
-      if (stableQuestions.length > 0) {
-        return;
-      }
-      
-      let orderedQuestions: Question[] = [];
-      
-      // For each subject in order, get questions with smart rotation (with fallback)
-      for (const subject of sortedSubjects) {
-        const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
-        
-        try {
-          // Try to get unused questions for this user and subject
-          const unusedQuestions = await supabaseService.getUnusedQuestions(
-            state.currentUser.id, 
-            testId, 
-            subject.subjectName
-          );
-          
-          let questionsToUse: Question[] = [];
-          
-          if (unusedQuestions.length >= subject.questionCount) {
-            // Use only unused questions
-            questionsToUse = shuffleArray(unusedQuestions).slice(0, subject.questionCount);
-            console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} available)`);
-          } else {
-            // Use all unused questions + some random from used questions
-            const usedQuestions = subjectQuestions.filter(q => !unusedQuestions.some(uq => uq.id === q.id));
-            const shuffledUsed = shuffleArray(usedQuestions);
-            const remainingNeeded = subject.questionCount - unusedQuestions.length;
-            
-            questionsToUse = [
-              ...shuffleArray(unusedQuestions),
-              ...shuffledUsed.slice(0, remainingNeeded)
-            ];
-            console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions`);
-          }
-          
-          orderedQuestions = [...orderedQuestions, ...questionsToUse];
-        } catch (error) {
-          // Fallback: If smart rotation fails, use regular shuffling
-          console.log(`Smart rotation failed for ${subject.subjectName}, using fallback shuffling:`, error);
-          const shuffledSubjectQuestions = shuffleArray(subjectQuestions);
-          const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
-          const selectedQuestions = shuffledSubjectQuestions.slice(0, questionsToTake);
-          orderedQuestions = [...orderedQuestions, ...selectedQuestions];
-        }
-      }
-      
-      console.log('Final ordered questions:', orderedQuestions.length);
-      console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
-      
-      setStableQuestions(orderedQuestions);
-    };
-    
-    loadQuestionsWithSmartRotation();
-  }, [test, state.currentUser, state.questions, state.testSubjects, testId]);
+  // Smart rotation is now handled in useMemo above for better performance
+  // This useEffect is removed to prevent multiple re-renders and async issues
 
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>(() => {
     const key = state.currentUser ? `pp_session_${state.currentUser.id}_${testId}` : '';
@@ -291,20 +232,8 @@ const TestScreen: React.FC = () => {
       const newResult = await supabaseService.createResult(resultData);
       dispatch({ type: 'ADD_RESULT', payload: newResult });
       
-      // Track question usage for smart rotation (optional)
-      for (const question of testQuestions) {
-        try {
-          await supabaseService.trackQuestionUsage(
-            state.currentUser.id,
-            question.id,
-            testId,
-            question.subject || 'General'
-          );
-        } catch (error) {
-          // Silently fail if question_usage table doesn't exist
-          console.log('Question usage tracking not available (table may not exist)');
-        }
-      }
+      // Question usage tracking removed for better performance
+      // Smart rotation feature is disabled to prevent database errors
       
       clearSession();
       navigate(`/results/${newResult.id}`);
