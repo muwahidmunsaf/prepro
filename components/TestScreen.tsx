@@ -44,13 +44,8 @@ const TestScreen: React.FC = () => {
   }, [testId, state.testSubjects, dispatch]);
 
   // Clear stable questions when subjects are loaded to force reordering
-  useEffect(() => {
-    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
-    if (testSubjects.length > 0 && stableQuestions.length > 0) {
-      console.log('Clearing stable questions to force subject-based ordering');
-      setStableQuestions([]);
-    }
-  }, [state.testSubjects, testId, stableQuestions.length]);
+  // Remove the problematic useEffect that was clearing stable questions
+  // This was causing the blinking issue
   
   // Use stable questions order - only shuffle once on first load, not on resume
   const testQuestions = useMemo(() => {
@@ -63,6 +58,11 @@ const TestScreen: React.FC = () => {
     
     // Get all questions for this test
     const allQuestions = state.questions.filter(q => q.testId === testId);
+    
+    // If no questions available, return empty
+    if (allQuestions.length === 0) {
+      return [];
+    }
     
     // Get subjects for this test in order
     const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
@@ -81,22 +81,28 @@ const TestScreen: React.FC = () => {
       return shuffled;
     }
     
-    // Return empty for now, will be populated by useEffect
-    return [];
+    // For subjects configured, return all questions for now (useEffect will handle ordering)
+    return allQuestions;
   }, [state.questions, state.testSubjects, testId, test, stableQuestions]);
 
   // Load questions with smart rotation when dependencies change
   useEffect(() => {
     const loadQuestionsWithSmartRotation = async () => {
-      if (!test || !state.currentUser || stableQuestions.length > 0) return;
+      if (!test || !state.currentUser) return;
       
       const allQuestions = state.questions.filter(q => q.testId === testId);
       const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
       const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
       
+      // If no subjects configured, use simple shuffling
       if (sortedSubjects.length === 0) {
         const shuffled = shuffleArray(allQuestions).slice(0, test.totalQuestions);
         setStableQuestions(shuffled);
+        return;
+      }
+      
+      // If we already have stable questions and they match our current setup, don't reload
+      if (stableQuestions.length > 0) {
         return;
       }
       
@@ -151,7 +157,7 @@ const TestScreen: React.FC = () => {
     };
     
     loadQuestionsWithSmartRotation();
-  }, [test, state.currentUser, state.questions, state.testSubjects, testId, stableQuestions.length]);
+  }, [test, state.currentUser, state.questions, state.testSubjects, testId]);
 
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>(() => {
     const key = state.currentUser ? `pp_session_${state.currentUser.id}_${testId}` : '';
