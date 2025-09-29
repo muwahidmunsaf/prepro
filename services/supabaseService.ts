@@ -552,7 +552,8 @@ export async function fetchQuestionCountBySubject(testId: string, subjectName: s
     .from('questions')
     .select('*', { count: 'exact' })
     .eq('test_id', testId)
-    .eq('subject', subjectName);
+    .eq('subject', subjectName)
+    .eq('deleted', false);
 
   if (error) throw error;
   return count || 0;
