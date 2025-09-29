@@ -588,15 +588,22 @@ export async function getUsedQuestionIds(userId: string, testId: string, subject
 }
 
 export async function getUnusedQuestions(userId: string, testId: string, subjectName: string): Promise<Question[]> {
-  // Get all questions for this test and subject
-  const allQuestions = await fetchQuestionsByTestId(testId);
-  const subjectQuestions = allQuestions.filter(q => q.subject === subjectName);
-  
-  // Get used question IDs
-  const usedQuestionIds = await getUsedQuestionIds(userId, testId, subjectName);
-  
-  // Return questions that haven't been used
-  return subjectQuestions.filter(q => !usedQuestionIds.includes(q.id));
+  try {
+    // Get all questions for this test and subject
+    const allQuestions = await fetchQuestionsByTestId(testId);
+    const subjectQuestions = allQuestions.filter(q => q.subject === subjectName);
+    
+    // Get used question IDs
+    const usedQuestionIds = await getUsedQuestionIds(userId, testId, subjectName);
+    
+    // Return questions that haven't been used
+    return subjectQuestions.filter(q => !usedQuestionIds.includes(q.id));
+  } catch (error) {
+    // If question_usage table doesn't exist, return all questions (no smart rotation)
+    console.log('Smart rotation not available, returning all questions');
+    const allQuestions = await fetchQuestionsByTestId(testId);
+    return allQuestions.filter(q => q.subject === subjectName);
+  }
 }
 
 // Test Subject Management

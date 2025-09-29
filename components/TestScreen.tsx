@@ -102,37 +102,46 @@ const TestScreen: React.FC = () => {
       
       let orderedQuestions: Question[] = [];
       
-      // For each subject in order, get questions with smart rotation
+      // For each subject in order, get questions with smart rotation (with fallback)
       for (const subject of sortedSubjects) {
         const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
         
-        // Get unused questions for this user and subject
-        const unusedQuestions = await supabaseService.getUnusedQuestions(
-          state.currentUser.id, 
-          testId, 
-          subject.subjectName
-        );
-        
-        let questionsToUse: Question[] = [];
-        
-        if (unusedQuestions.length >= subject.questionCount) {
-          // Use only unused questions
-          questionsToUse = shuffleArray(unusedQuestions).slice(0, subject.questionCount);
-          console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} available)`);
-        } else {
-          // Use all unused questions + some random from used questions
-          const usedQuestions = subjectQuestions.filter(q => !unusedQuestions.some(uq => uq.id === q.id));
-          const shuffledUsed = shuffleArray(usedQuestions);
-          const remainingNeeded = subject.questionCount - unusedQuestions.length;
+        try {
+          // Try to get unused questions for this user and subject
+          const unusedQuestions = await supabaseService.getUnusedQuestions(
+            state.currentUser.id, 
+            testId, 
+            subject.subjectName
+          );
           
-          questionsToUse = [
-            ...shuffleArray(unusedQuestions),
-            ...shuffledUsed.slice(0, remainingNeeded)
-          ];
-          console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions`);
+          let questionsToUse: Question[] = [];
+          
+          if (unusedQuestions.length >= subject.questionCount) {
+            // Use only unused questions
+            questionsToUse = shuffleArray(unusedQuestions).slice(0, subject.questionCount);
+            console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} available)`);
+          } else {
+            // Use all unused questions + some random from used questions
+            const usedQuestions = subjectQuestions.filter(q => !unusedQuestions.some(uq => uq.id === q.id));
+            const shuffledUsed = shuffleArray(usedQuestions);
+            const remainingNeeded = subject.questionCount - unusedQuestions.length;
+            
+            questionsToUse = [
+              ...shuffleArray(unusedQuestions),
+              ...shuffledUsed.slice(0, remainingNeeded)
+            ];
+            console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions`);
+          }
+          
+          orderedQuestions = [...orderedQuestions, ...questionsToUse];
+        } catch (error) {
+          // Fallback: If smart rotation fails, use regular shuffling
+          console.log(`Smart rotation failed for ${subject.subjectName}, using fallback shuffling:`, error);
+          const shuffledSubjectQuestions = shuffleArray(subjectQuestions);
+          const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
+          const selectedQuestions = shuffledSubjectQuestions.slice(0, questionsToTake);
+          orderedQuestions = [...orderedQuestions, ...selectedQuestions];
         }
-        
-        orderedQuestions = [...orderedQuestions, ...questionsToUse];
       }
       
       console.log('Final ordered questions:', orderedQuestions.length);
@@ -276,7 +285,7 @@ const TestScreen: React.FC = () => {
       const newResult = await supabaseService.createResult(resultData);
       dispatch({ type: 'ADD_RESULT', payload: newResult });
       
-      // Track question usage for smart rotation
+      // Track question usage for smart rotation (optional)
       for (const question of testQuestions) {
         try {
           await supabaseService.trackQuestionUsage(
@@ -286,7 +295,8 @@ const TestScreen: React.FC = () => {
             question.subject || 'General'
           );
         } catch (error) {
-          console.error('Error tracking question usage:', error);
+          // Silently fail if question_usage table doesn't exist
+          console.log('Question usage tracking not available (table may not exist)');
         }
       }
       
