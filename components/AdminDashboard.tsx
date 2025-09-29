@@ -847,7 +847,37 @@ const AdminDashboard: React.FC = () => {
         difficulty: (editingItem as Question)?.difficulty || 'Medium',
     });
     
-    const questionsForTest = state.questions.filter(q => q.testId === selectedTestForQuestions!.id);
+    // FIX: Fetch questions directly from database for this specific test
+    const [questionsForTest, setQuestionsForTest] = useState<Question[]>([]);
+    const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+    
+    // Load questions for the selected test
+    React.useEffect(() => {
+      if (selectedTestForQuestions) {
+        setIsLoadingQuestions(true);
+        supabaseService.fetchQuestionsByTestId(selectedTestForQuestions.id)
+          .then(questions => {
+            setQuestionsForTest(questions);
+            setIsLoadingQuestions(false);
+          })
+          .catch(error => {
+            console.error('Error loading questions:', error);
+            setIsLoadingQuestions(false);
+          });
+      }
+    }, [selectedTestForQuestions]);
+    
+    // Local delete function that updates both global and local state
+    const handleDeleteQuestion = async (questionId: string) => {
+      try {
+        await supabaseService.deleteQuestion(questionId);
+        dispatch({ type: 'DELETE_QUESTION', payload: questionId });
+        // Update local state
+        setQuestionsForTest(prev => prev.filter(q => q.id !== questionId));
+      } catch (error) {
+        console.error('Error deleting question:', error);
+      }
+    };
     
     // Filter questions by subject
     const filteredQuestions = subjectFilter === 'all' 
@@ -869,9 +899,13 @@ const AdminDashboard: React.FC = () => {
         if (editingItem) {
             const updatedQuestion = await supabaseService.updateQuestion({ ...editingItem as Question, ...formState });
             dispatch({ type: 'UPDATE_QUESTION', payload: updatedQuestion });
+            // Update local state
+            setQuestionsForTest(prev => prev.map(q => q.id === updatedQuestion.id ? updatedQuestion : q));
         } else {
             const newQuestion = await supabaseService.createQuestion({ ...formState, testId: selectedTestForQuestions!.id });
             dispatch({ type: 'ADD_QUESTION', payload: newQuestion });
+            // Update local state
+            setQuestionsForTest(prev => [...prev, newQuestion]);
           }
           closeModal();
         } catch (error) {
@@ -1112,6 +1146,12 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
             
+            {isLoadingQuestions ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-slate-600 dark:text-slate-400">Loading questions...</p>
+              </div>
+            ) : (
              <div className="space-y-3">
                 {filteredQuestions.map(q => (
                     <div key={q.id} className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedQuestions.includes(q.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
@@ -1136,7 +1176,7 @@ const AdminDashboard: React.FC = () => {
                                 <button onClick={() => openModal(q)} className="bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors" title="Edit Question">
                                     <EditIcon />
                                 </button>
-                                <button onClick={() => dispatch({type: 'DELETE_QUESTION', payload: q.id})} className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors" title="Delete Question">
+                                <button onClick={() => handleDeleteQuestion(q.id)} className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors" title="Delete Question">
                                     <TrashIcon />
                                 </button>
                             </div>
@@ -1144,6 +1184,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                 ))}
             </div>
+            )}
 
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingItem ? 'Edit Question' : 'Add Question'}>
                  <form onSubmit={handleSubmit} className="space-y-4">
