@@ -269,8 +269,12 @@ export async function fetchQuestions(): Promise<Question[]> {
     .order('position', { ascending: true })
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching questions:', error);
+    throw error;
+  }
 
+  console.log(`Total questions fetched: ${data.length} (non-deleted)`);
   return data.map(q => ({
     id: q.id.toString(),
     testId: q.test_id.toString(),
@@ -555,7 +559,12 @@ export async function fetchQuestionCountBySubject(testId: string, subjectName: s
     .eq('subject', subjectName)
     .eq('deleted', false);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching question count:', error);
+    throw error;
+  }
+  
+  console.log(`Question count for ${subjectName} in test ${testId}: ${count} (non-deleted)`);
   return count || 0;
 }
 
