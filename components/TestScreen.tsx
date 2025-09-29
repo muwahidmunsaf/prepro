@@ -23,7 +23,7 @@ const clearUsedQuestions = () => {
       localStorage.removeItem(key);
     }
   });
-  console.log('Used questions cleared for all subjects');
+  // console.log('Used questions cleared for all subjects');
 };
 
 // Make it available globally for testing
@@ -112,7 +112,7 @@ const TestScreen: React.FC = () => {
         // Use only unused questions
         const shuffledUnused = shuffleArray(unusedQuestions);
         questionsToUse = shuffledUnused.slice(0, subject.questionCount);
-        console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} remaining)`);
+        // console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} remaining)`);
       } else {
         // Use all unused questions + some from used questions (reset cycle)
         const usedQuestions = subjectQuestions.filter(q => usedQuestionIds.includes(q.id));
@@ -123,18 +123,18 @@ const TestScreen: React.FC = () => {
           ...shuffleArray(unusedQuestions),
           ...shuffledUsed.slice(0, remainingNeeded)
         ];
-        console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions (cycle reset)`);
+        // console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions (cycle reset)`);
       }
       
       orderedQuestions = [...orderedQuestions, ...questionsToUse];
     }
     
-    console.log('=== SMART ROTATION DEBUG ===');
-    console.log('Test subjects found:', testSubjects);
-    console.log('Sorted subjects:', sortedSubjects);
-    console.log('All questions for test:', allQuestions.length);
-    console.log('Final ordered questions:', orderedQuestions.length);
-    console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
+    // console.log('=== SMART ROTATION DEBUG ===');
+    // console.log('Test subjects found:', testSubjects);
+    // console.log('Sorted subjects:', sortedSubjects);
+    // console.log('All questions for test:', allQuestions.length);
+    // console.log('Final ordered questions:', orderedQuestions.length);
+    // console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
     
     setStableQuestions(orderedQuestions);
     return orderedQuestions;
