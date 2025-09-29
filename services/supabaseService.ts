@@ -295,7 +295,20 @@ export async function fetchQuestionsByTestId(testId: string): Promise<Question[]
     .eq('deleted', false)
     .order('position', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching questions by test ID:', error);
+    throw error;
+  }
+
+  console.log(`Questions fetched for test ${testId}: ${data.length} (non-deleted)`);
+  
+  // Debug: Show subject breakdown
+  const subjectCounts = data.reduce((acc, q) => {
+    const subject = q.subject || 'General';
+    acc[subject] = (acc[subject] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  console.log('Subject breakdown:', subjectCounts);
 
   return data.map(q => ({
     id: q.id.toString(),
