@@ -11,6 +11,24 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
 };
 
+// Function to clear used questions for testing (can be called from console)
+const clearUsedQuestions = () => {
+  const userId = localStorage.getItem('currentUser');
+  if (!userId) return;
+  
+  // Clear all used questions for current user
+  const keys = Object.keys(localStorage);
+  keys.forEach(key => {
+    if (key.startsWith('used_questions_')) {
+      localStorage.removeItem(key);
+    }
+  });
+  console.log('Used questions cleared for all subjects');
+};
+
+// Make it available globally for testing
+(window as any).clearUsedQuestions = clearUsedQuestions;
+
 const TestScreen: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const { state, dispatch } = useAppContext();
@@ -47,7 +65,7 @@ const TestScreen: React.FC = () => {
   // Remove the problematic useEffect that was clearing stable questions
   // This was causing the blinking issue
   
-  // Use stable questions order - only shuffle once on first load, not on resume
+  // Use stable questions order with smart rotation - no repeats until all used
   const testQuestions = useMemo(() => {
     if (!test) return [];
     
@@ -75,18 +93,43 @@ const TestScreen: React.FC = () => {
       return shuffled;
     }
     
-    // For subjects configured, use simple subject-based shuffling immediately
+    // For subjects configured, use smart rotation (no repeats until all used)
     let orderedQuestions: Question[] = [];
     
     for (const subject of sortedSubjects) {
       const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
-      const shuffledSubjectQuestions = shuffleArray(subjectQuestions);
-      const questionsToTake = Math.min(subject.questionCount, shuffledSubjectQuestions.length);
-      const selectedQuestions = shuffledSubjectQuestions.slice(0, questionsToTake);
-      orderedQuestions = [...orderedQuestions, ...selectedQuestions];
+      
+      // Get used questions for this user and subject from localStorage
+      const usedQuestionsKey = `used_questions_${state.currentUser?.id}_${testId}_${subject.subjectName}`;
+      const usedQuestionIds = JSON.parse(localStorage.getItem(usedQuestionsKey) || '[]');
+      
+      // Get unused questions
+      const unusedQuestions = subjectQuestions.filter(q => !usedQuestionIds.includes(q.id));
+      
+      let questionsToUse: Question[] = [];
+      
+      if (unusedQuestions.length >= subject.questionCount) {
+        // Use only unused questions
+        const shuffledUnused = shuffleArray(unusedQuestions);
+        questionsToUse = shuffledUnused.slice(0, subject.questionCount);
+        console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} remaining)`);
+      } else {
+        // Use all unused questions + some from used questions (reset cycle)
+        const usedQuestions = subjectQuestions.filter(q => usedQuestionIds.includes(q.id));
+        const shuffledUsed = shuffleArray(usedQuestions);
+        const remainingNeeded = subject.questionCount - unusedQuestions.length;
+        
+        questionsToUse = [
+          ...shuffleArray(unusedQuestions),
+          ...shuffledUsed.slice(0, remainingNeeded)
+        ];
+        console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions (cycle reset)`);
+      }
+      
+      orderedQuestions = [...orderedQuestions, ...questionsToUse];
     }
     
-    console.log('=== SUBJECT ORDERING DEBUG ===');
+    console.log('=== SMART ROTATION DEBUG ===');
     console.log('Test subjects found:', testSubjects);
     console.log('Sorted subjects:', sortedSubjects);
     console.log('All questions for test:', allQuestions.length);
@@ -95,7 +138,7 @@ const TestScreen: React.FC = () => {
     
     setStableQuestions(orderedQuestions);
     return orderedQuestions;
-  }, [state.questions, state.testSubjects, testId, test, stableQuestions]);
+  }, [state.questions, state.testSubjects, testId, test, stableQuestions, state.currentUser]);
 
   // Smart rotation is now handled in useMemo above for better performance
   // This useEffect is removed to prevent multiple re-renders and async issues
@@ -232,8 +275,16 @@ const TestScreen: React.FC = () => {
       const newResult = await supabaseService.createResult(resultData);
       dispatch({ type: 'ADD_RESULT', payload: newResult });
       
-      // Question usage tracking removed for better performance
-      // Smart rotation feature is disabled to prevent database errors
+      // Track used questions for smart rotation
+      for (const question of testQuestions) {
+        const usedQuestionsKey = `used_questions_${state.currentUser.id}_${testId}_${question.subject || 'General'}`;
+        const usedQuestionIds = JSON.parse(localStorage.getItem(usedQuestionsKey) || '[]');
+        
+        if (!usedQuestionIds.includes(question.id)) {
+          usedQuestionIds.push(question.id);
+          localStorage.setItem(usedQuestionsKey, JSON.stringify(usedQuestionIds));
+        }
+      }
       
       clearSession();
       navigate(`/results/${newResult.id}`);
