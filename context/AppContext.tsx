@@ -197,15 +197,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Load all data from Supabase only if user is logged in
-        const [categories, tests, questions, results, users, categoryAccess, testAccess] = await Promise.all([
+        const [categories, tests, results, users, categoryAccess, testAccess] = await Promise.all([
           supabaseService.fetchCategories().catch(() => []),
           supabaseService.fetchTests().catch(() => []),
-          supabaseService.fetchQuestions().catch(() => []),
           supabaseService.fetchResults().catch(() => []),
           supabaseService.fetchUsers().catch(() => []),
           supabaseService.fetchCategoryAccess().catch(() => []),
           supabaseService.fetchTestAccess().catch(() => [])
         ]);
+        
+        // Don't load questions at startup - load them lazily when needed
+        const questions: any[] = [];
+        console.log('Skipping questions loading at startup for better performance');
 
         // Load test access from localStorage as fallback
         const localTestAccess: TestAccess[] = [];

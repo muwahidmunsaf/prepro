@@ -45,26 +45,33 @@ const TestScreen: React.FC = () => {
 
   const test = useMemo(() => state.tests.find(t => t.id === testId), [state.tests, testId]);
 
-  // Load test subjects when component mounts
+  // Load test subjects and questions when component mounts or testId changes
   useEffect(() => {
-    const loadTestSubjects = async () => {
-      if (testId && (!state.testSubjects || state.testSubjects.length === 0)) {
+    const loadTestData = async () => {
+      if (testId) {
         try {
-          const subjects = await supabaseService.fetchTestSubjects(testId);
-          dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
+          // Load test subjects
+          if (!state.testSubjects || state.testSubjects.length === 0) {
+            const subjects = await supabaseService.fetchTestSubjects(testId);
+            dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
+          }
+          
+          // Load questions for this test
+          const questions = await supabaseService.fetchQuestionsByTestId(testId);
+          console.log(`🔄 Loaded ${questions.length} questions for test ${testId}`);
+          
+          // Update global state with questions
+          dispatch({ type: 'BULK_ADD_QUESTIONS', payload: questions } as any);
+          
         } catch (error) {
-          console.error('Failed to load test subjects:', error);
+          console.error('Failed to load test data:', error);
         }
       }
     };
     
-    loadTestSubjects();
-  }, [testId, state.testSubjects, dispatch]);
+    loadTestData();
+  }, [testId, dispatch]);
 
-  // Clear stable questions when subjects are loaded to force reordering
-  // Remove the problematic useEffect that was clearing stable questions
-  // This was causing the blinking issue
-  
   // Use stable questions order with smart rotation - no repeats until all used
   const testQuestions = useMemo(() => {
     if (!test) return [];
@@ -74,10 +81,18 @@ const TestScreen: React.FC = () => {
       return stableQuestions;
     }
     
-    // Get all questions for this test
+    // Get all questions for this test from global state
     const allQuestions = state.questions.filter(q => q.testId === testId);
     
-    // If no questions available, return empty
+    console.log(`All questions for test ${testId}:`, {
+      totalQuestions: allQuestions.length,
+      subjectBreakdown: allQuestions.reduce((acc, q) => {
+        acc[q.subject || 'General'] = (acc[q.subject || 'General'] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    });
+    
+    // If no questions available yet, return empty (they're still loading)
     if (allQuestions.length === 0) {
       return [];
     }
@@ -96,6 +111,19 @@ const TestScreen: React.FC = () => {
     // For subjects configured, use smart rotation (no repeats until all used)
     let orderedQuestions: Question[] = [];
     
+    // Calculate total questions needed from all subjects
+    const totalSubjectQuestions = sortedSubjects.reduce((sum, subject) => sum + subject.questionCount, 0);
+    
+    // If total subject questions is less than test total, use test total instead
+    const targetTotalQuestions = Math.max(totalSubjectQuestions, test.totalQuestions);
+    
+    console.log(`Test ${testId} question distribution:`, {
+      testTotalQuestions: test.totalQuestions,
+      totalSubjectQuestions,
+      targetTotalQuestions,
+      subjects: sortedSubjects.map(s => ({ name: s.subjectName, configured: s.questionCount }))
+    });
+    
     for (const subject of sortedSubjects) {
       const subjectQuestions = allQuestions.filter(q => q.subject === subject.subjectName);
       
@@ -108,40 +136,68 @@ const TestScreen: React.FC = () => {
       
       let questionsToUse: Question[] = [];
       
-      if (unusedQuestions.length >= subject.questionCount) {
+      // Calculate proportional question count for this subject
+      const subjectProportion = subject.questionCount / totalSubjectQuestions;
+      const targetSubjectQuestions = Math.round(targetTotalQuestions * subjectProportion);
+      
+      console.log(`Subject ${subject.subjectName} details:`, {
+        totalAvailable: subjectQuestions.length,
+        unused: unusedQuestions.length,
+        used: usedQuestionIds.length,
+        targetForSubject: targetSubjectQuestions,
+        subjectProportion,
+        configuredCount: subject.questionCount
+      });
+      
+      if (unusedQuestions.length >= targetSubjectQuestions) {
         // Use only unused questions
         const shuffledUnused = shuffleArray(unusedQuestions);
-        questionsToUse = shuffledUnused.slice(0, subject.questionCount);
-        // console.log(`Subject: ${subject.subjectName}, Using ${subject.questionCount} unused questions (${unusedQuestions.length} remaining)`);
+        questionsToUse = shuffledUnused.slice(0, targetSubjectQuestions);
+        console.log(`Using ${questionsToUse.length} unused questions for ${subject.subjectName}`);
       } else {
         // Use all unused questions + some from used questions (reset cycle)
         const usedQuestions = subjectQuestions.filter(q => usedQuestionIds.includes(q.id));
         const shuffledUsed = shuffleArray(usedQuestions);
-        const remainingNeeded = subject.questionCount - unusedQuestions.length;
+        const remainingNeeded = targetSubjectQuestions - unusedQuestions.length;
         
         questionsToUse = [
           ...shuffleArray(unusedQuestions),
           ...shuffledUsed.slice(0, remainingNeeded)
         ];
-        // console.log(`Subject: ${subject.subjectName}, Using ${unusedQuestions.length} unused + ${remainingNeeded} used questions (cycle reset)`);
+        console.log(`Using ${unusedQuestions.length} unused + ${Math.min(remainingNeeded, usedQuestions.length)} used questions for ${subject.subjectName}`);
       }
       
       orderedQuestions = [...orderedQuestions, ...questionsToUse];
     }
     
-    // console.log('=== SMART ROTATION DEBUG ===');
-    // console.log('Test subjects found:', testSubjects);
-    // console.log('Sorted subjects:', sortedSubjects);
-    // console.log('All questions for test:', allQuestions.length);
-    // console.log('Final ordered questions:', orderedQuestions.length);
-    // console.log('First 5 questions subjects:', orderedQuestions.slice(0, 5).map(q => q.subject));
+    // If we still don't have enough questions, fill from remaining questions
+    if (orderedQuestions.length < targetTotalQuestions) {
+      const remainingQuestions = allQuestions.filter(q => !orderedQuestions.some(oq => oq.id === q.id));
+      const shuffledRemaining = shuffleArray(remainingQuestions);
+      const additionalNeeded = targetTotalQuestions - orderedQuestions.length;
+      
+      console.log(`Need to fill ${additionalNeeded} more questions. Available remaining: ${remainingQuestions.length}`);
+      
+      orderedQuestions = [...orderedQuestions, ...shuffledRemaining.slice(0, additionalNeeded)];
+    }
+    
+    // Ensure we don't exceed the target total
+    orderedQuestions = orderedQuestions.slice(0, targetTotalQuestions);
+    
+    console.log(`Final question selection for test ${testId}:`, {
+      totalSelected: orderedQuestions.length,
+      targetTotal: targetTotalQuestions,
+      subjectBreakdown: sortedSubjects.map(s => ({
+        subject: s.subjectName,
+        selected: orderedQuestions.filter(q => q.subject === s.subjectName).length
+      }))
+    });
     
     setStableQuestions(orderedQuestions);
     return orderedQuestions;
   }, [state.questions, state.testSubjects, testId, test, stableQuestions, state.currentUser]);
 
   // Smart rotation is now handled in useMemo above for better performance
-  // This useEffect is removed to prevent multiple re-renders and async issues
 
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>(() => {
     const key = state.currentUser ? `pp_session_${state.currentUser.id}_${testId}` : '';
@@ -372,7 +428,7 @@ const TestScreen: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">{test.title}</h1>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                        <Timer duration={test.duration} onTimeUp={confirmSubmit} isPaused={isPaused || !!showConfirm || showSubmitConfirm} initialSeconds={timeLeft} onTick={setTimeLeft} />
+                        <Timer duration={test.duration} onTimeUp={confirmSubmit} isPaused={isPaused || !!showConfirm || showSubmitConfirm} initialSeconds={timeLeft} />
                         {!endedForCheating && (
                           <button onClick={() => { 
                             setIsPaused(true); 

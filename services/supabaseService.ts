@@ -398,7 +398,10 @@ export async function createMultipleQuestions(questions: Omit<Question, 'id'>[])
     test_id: parseInt(q.testId),
     question_text: q.questionText,
     options: q.options,
-    correct_answer: q.correctAnswer
+    correct_answer: q.correctAnswer,
+    subject: q.subject || 'General',
+    position: q.position || 1,
+    difficulty: q.difficulty || 'Medium'
   }));
 
   const { data, error } = await supabase
@@ -413,7 +416,10 @@ export async function createMultipleQuestions(questions: Omit<Question, 'id'>[])
     testId: q.test_id.toString(),
     questionText: q.question_text,
     options: q.options,
-    correctAnswer: q.correct_answer
+    correctAnswer: q.correct_answer,
+    subject: q.subject || 'General',
+    position: q.position || 1,
+    difficulty: q.difficulty || 'Medium'
   }));
 }
 

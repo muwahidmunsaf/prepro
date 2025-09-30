@@ -278,22 +278,29 @@ const SubjectManager: React.FC<SubjectManagerProps> = ({ testId, testTitle, onCl
       
       console.log('Starting position for subject:', nextPosition);
       
-      // Create questions (only unique ones)
-      let successCount = 0;
-      for (const q of unique) {
-        if (q.questionText.trim()) {
-          console.log('Creating question:', q.questionText.substring(0, 50) + '...');
-          await supabaseService.createQuestion({
-            testId,
-            questionText: q.questionText,
-            options: [q.option1, q.option2, q.option3, q.option4],
-            correctAnswer: q.correctAnswer, // Already 0-based index
-            subject: selectedSubjectForCSV,
-            position: nextPosition++,
-            difficulty: q.difficulty
-          });
-          successCount++;
-        }
+      // Create questions (only unique ones) - Use bulk upload for better performance
+      const questionsToCreate = unique
+        .filter(q => q.questionText.trim())
+        .map(q => ({
+          testId,
+          questionText: q.questionText,
+          options: [q.option1, q.option2, q.option3, q.option4],
+          correctAnswer: q.correctAnswer, // Already 0-based index
+          subject: selectedSubjectForCSV,
+          position: nextPosition++,
+          difficulty: q.difficulty
+        }));
+
+      console.log(`Creating ${questionsToCreate.length} questions in bulk...`);
+      const createdQuestions = await supabaseService.createMultipleQuestions(questionsToCreate);
+      const successCount = createdQuestions.length;
+      
+      // Update subject question count to match the actual uploaded questions
+      const subjectToUpdate = subjects.find(s => s.subjectName === selectedSubjectForCSV);
+      if (subjectToUpdate && successCount > 0) {
+        const newQuestionCount = subjectToUpdate.questionCount + successCount;
+        console.log(`Updating subject ${selectedSubjectForCSV} question count from ${subjectToUpdate.questionCount} to ${newQuestionCount}`);
+        await supabaseService.updateTestSubject(subjectToUpdate.id, { questionCount: newQuestionCount });
       }
       
       console.log('Upload completed. Success count:', successCount);

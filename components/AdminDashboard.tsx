@@ -224,8 +224,8 @@ const AdminDashboard: React.FC = () => {
         } else {
             const newCategory = await supabaseService.createCategory({ name });
             dispatch({ type: 'ADD_CATEGORY', payload: newCategory });
-          }
-          closeModal();
+        }
+        closeModal();
         } catch (error) {
           console.error('Error saving category:', error);
         }
@@ -758,8 +758,8 @@ const AdminDashboard: React.FC = () => {
               totalQuestions: parseInt(formState.totalQuestions.toString())
             });
             dispatch({ type: 'ADD_TEST', payload: newTest });
-          }
-          closeModal();
+        }
+        closeModal();
         } catch (error) {
           console.error('Error saving test:', error);
         }
@@ -790,8 +790,8 @@ const AdminDashboard: React.FC = () => {
                         <PlusIcon className="w-4 h-4"/> 
                         <span>Add Test</span>
                     </button>
-                </div>
             </div>
+                        </div>
             
             <ul className="space-y-3">
                 {filteredTests.map(test => (
@@ -906,8 +906,8 @@ const AdminDashboard: React.FC = () => {
             dispatch({ type: 'ADD_QUESTION', payload: newQuestion });
             // Update local state
             setQuestionsForTest(prev => [...prev, newQuestion]);
-          }
-          closeModal();
+        }
+        closeModal();
         } catch (error) {
           console.error('Error saving question:', error);
         }
@@ -1008,7 +1008,7 @@ const AdminDashboard: React.FC = () => {
 
 
     if (!selectedTestForQuestions) {
-      return (
+    return (
         <div>
           <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">Manage Questions</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-4">Select a test to manage questions.</p>
@@ -1020,21 +1020,21 @@ const AdminDashboard: React.FC = () => {
                 className="w-full p-3 bg-slate-100 dark:bg-slate-700 rounded-lg text-left hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
               >
                 <div className="flex justify-between items-center">
-                  <div>
+                <div>
                     <h3 className="font-semibold text-slate-900 dark:text-white">{test.title}</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       {state.categories.find(c => c.id === test.categoryId)?.name} • {test.totalQuestions} Questions
                     </p>
-                  </div>
+                </div>
                   <span className="text-indigo-600 font-semibold">Select &rarr;</span>
                 </div>
               </button>
             ))}
-          </div>
+            </div>
           {state.tests.length === 0 && (
             <p className="text-center text-gray-500 py-8">No tests available. Create a test first in the Tests section.</p>
           )}
-        </div>
+                        </div>
       );
     }
 
@@ -1259,7 +1259,7 @@ const AdminDashboard: React.FC = () => {
                     )}
                 </div>
             </Modal>
-
+            
 
         </div>
     );
@@ -1329,7 +1329,7 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         
-        <div className="space-y-4">
+                <div className="space-y-4">
           {filteredTestsForCategory.map(test => (
             <div key={test.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -1375,8 +1375,8 @@ const AdminDashboard: React.FC = () => {
                     title="Delete Test"
                   >
                     <TrashIcon />
-                  </button>
-              </div>
+                    </button>
+                </div>
               </div>
             </div>
           ))}
