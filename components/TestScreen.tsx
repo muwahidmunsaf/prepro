@@ -4,6 +4,7 @@ import { useAppContext } from '../hooks/useAppContext';
 import * as supabaseService from '../services/supabaseService';
 import Timer from './Timer';
 import type { Question, UserAnswer } from '../types';
+import { debug } from '../utils/debug';
 
 const QUESTIONS_PER_PAGE = 25;
 
@@ -58,13 +59,13 @@ const TestScreen: React.FC = () => {
           
           // Load questions for this test
           const questions = await supabaseService.fetchQuestionsByTestId(testId);
-          console.log(`🔄 Loaded ${questions.length} questions for test ${testId}`);
+          debug.questions(`🔄 Loaded ${questions.length} questions for test ${testId}`);
           
           // Update global state with questions
           dispatch({ type: 'BULK_ADD_QUESTIONS', payload: questions } as any);
           
         } catch (error) {
-          console.error('Failed to load test data:', error);
+          debug.error('Failed to load test data:', error);
         }
       }
     };
@@ -84,7 +85,7 @@ const TestScreen: React.FC = () => {
     // Get all questions for this test from global state
     const allQuestions = state.questions.filter(q => q.testId === testId);
     
-    console.log(`All questions for test ${testId}:`, {
+    debug.questions(`All questions for test ${testId}:`, {
       totalQuestions: allQuestions.length,
       subjectBreakdown: allQuestions.reduce((acc, q) => {
         acc[q.subject || 'General'] = (acc[q.subject || 'General'] || 0) + 1;
@@ -117,7 +118,7 @@ const TestScreen: React.FC = () => {
     // If total subject questions is less than test total, use test total instead
     const targetTotalQuestions = Math.max(totalSubjectQuestions, test.totalQuestions);
     
-    console.log(`Test ${testId} question distribution:`, {
+    debug.test(`Test ${testId} question distribution:`, {
       testTotalQuestions: test.totalQuestions,
       totalSubjectQuestions,
       targetTotalQuestions,
@@ -140,7 +141,7 @@ const TestScreen: React.FC = () => {
       const subjectProportion = subject.questionCount / totalSubjectQuestions;
       const targetSubjectQuestions = Math.round(targetTotalQuestions * subjectProportion);
       
-      console.log(`Subject ${subject.subjectName} details:`, {
+      debug.questions(`Subject ${subject.subjectName} details:`, {
         totalAvailable: subjectQuestions.length,
         unused: unusedQuestions.length,
         used: usedQuestionIds.length,
@@ -153,7 +154,7 @@ const TestScreen: React.FC = () => {
         // Use only unused questions
         const shuffledUnused = shuffleArray(unusedQuestions);
         questionsToUse = shuffledUnused.slice(0, targetSubjectQuestions);
-        console.log(`Using ${questionsToUse.length} unused questions for ${subject.subjectName}`);
+        debug.questions(`Using ${questionsToUse.length} unused questions for ${subject.subjectName}`);
       } else {
         // Use all unused questions + some from used questions (reset cycle)
         const usedQuestions = subjectQuestions.filter(q => usedQuestionIds.includes(q.id));
@@ -164,7 +165,7 @@ const TestScreen: React.FC = () => {
           ...shuffleArray(unusedQuestions),
           ...shuffledUsed.slice(0, remainingNeeded)
         ];
-        console.log(`Using ${unusedQuestions.length} unused + ${Math.min(remainingNeeded, usedQuestions.length)} used questions for ${subject.subjectName}`);
+        debug.questions(`Using ${unusedQuestions.length} unused + ${Math.min(remainingNeeded, usedQuestions.length)} used questions for ${subject.subjectName}`);
       }
       
       orderedQuestions = [...orderedQuestions, ...questionsToUse];
@@ -184,7 +185,7 @@ const TestScreen: React.FC = () => {
     // Ensure we don't exceed the target total
     orderedQuestions = orderedQuestions.slice(0, targetTotalQuestions);
     
-    console.log(`Final question selection for test ${testId}:`, {
+    debug.test(`Final question selection for test ${testId}:`, {
       totalSelected: orderedQuestions.length,
       targetTotal: targetTotalQuestions,
       subjectBreakdown: sortedSubjects.map(s => ({

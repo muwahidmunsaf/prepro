@@ -3,6 +3,7 @@ import React, { createContext, useReducer, Dispatch, useEffect, useState } from 
 import type { AppState, Action, User, CategoryAccess, TestAccess, TestSubject } from '../types';
 import * as supabaseService from '../services/supabaseService';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { debug } from '../utils/debug';
 
 // Function to get initial user from localStorage synchronously
 const getInitialUser = (): User | null => {
@@ -208,7 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         
         // Don't load questions at startup - load them lazily when needed
         const questions: any[] = [];
-        console.log('Skipping questions loading at startup for better performance');
+        debug.performance('Skipping questions loading at startup for better performance');
 
         // Load test access from localStorage as fallback
         const localTestAccess: TestAccess[] = [];
@@ -219,7 +220,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const data = JSON.parse(localStorage.getItem(key) || '{}');
               if (data.userId && data.testId && data.status) {
                 localTestAccess.push(data);
-                console.log('Loaded test access from localStorage:', data);
+                debug.log('Loaded test access from localStorage:', data);
               }
             } catch (error) {
               console.error('Error parsing localStorage test access:', error);
@@ -234,7 +235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const parsed = JSON.parse(globalTestAccess);
             if (Array.isArray(parsed)) {
               localTestAccess.push(...parsed);
-              console.log('Loaded global test access from localStorage:', parsed);
+              debug.log('Loaded global test access from localStorage:', parsed);
             }
           }
         } catch (error) {
@@ -262,7 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         setBootstrapped(true);
       } catch (error) {
-        console.error("Failed to load data from Supabase", error);
+        debug.error("Failed to load data from Supabase", error);
         setBootstrapped(true);
       }
     };
