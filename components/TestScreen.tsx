@@ -43,8 +43,15 @@ const TestScreen: React.FC = () => {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [stableQuestions, setStableQuestions] = useState<Question[]>([]);
   const [isPausedByUser, setIsPausedByUser] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const test = useMemo(() => state.tests.find(t => t.id === testId), [state.tests, testId]);
+
+  // Reset loading state when testId changes
+  useEffect(() => {
+    setIsDataLoading(true);
+    setStableQuestions([]);
+  }, [testId]);
 
   // Load test subjects and questions when component mounts or testId changes
   useEffect(() => {
@@ -66,6 +73,8 @@ const TestScreen: React.FC = () => {
           
         } catch (error) {
           debug.error('Failed to load test data:', error);
+        } finally {
+          setIsDataLoading(false);
         }
       }
     };
@@ -85,8 +94,13 @@ const TestScreen: React.FC = () => {
     // Get all questions for this test from global state
     const allQuestions = state.questions.filter(q => q.testId === testId);
     
+    // Get subjects for this test in order
+    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
+    const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
+    
     debug.questions(`All questions for test ${testId}:`, {
       totalQuestions: allQuestions.length,
+      subjectsLoaded: sortedSubjects.length,
       subjectBreakdown: allQuestions.reduce((acc, q) => {
         acc[q.subject || 'General'] = (acc[q.subject || 'General'] || 0) + 1;
         return acc;
@@ -95,12 +109,15 @@ const TestScreen: React.FC = () => {
     
     // If no questions available yet, return empty (they're still loading)
     if (allQuestions.length === 0) {
+      debug.questions(`No questions loaded yet for test ${testId}`);
       return [];
     }
     
-    // Get subjects for this test in order
-    const testSubjects = state.testSubjects?.filter(s => s.testId === testId) || [];
-    const sortedSubjects = testSubjects.sort((a, b) => a.displayOrder - b.displayOrder);
+    // If we have subjects configured but they're not loaded yet, wait
+    if (sortedSubjects.length === 0 && allQuestions.length > 0) {
+      debug.questions(`Questions loaded (${allQuestions.length}) but subjects not loaded yet for test ${testId}`);
+      return [];
+    }
     
     // If no subjects configured, use simple shuffling immediately
     if (sortedSubjects.length === 0) {
@@ -205,7 +222,7 @@ const TestScreen: React.FC = () => {
     
     setStableQuestions(finalQuestions);
     return finalQuestions;
-  }, [state.questions, state.testSubjects, testId, test, stableQuestions, state.currentUser]);
+  }, [state.questions, state.testSubjects, testId, test, stableQuestions, state.currentUser, isDataLoading]);
 
   // Smart rotation is now handled in useMemo above for better performance
 
@@ -362,7 +379,19 @@ const TestScreen: React.FC = () => {
   }, [state.currentUser, test, userAnswers, testQuestions, dispatch, navigate, clearSession]);
 
   if (!test) return <div className="text-white">Test not found.</div>;
-  if (testQuestions.length === 0) return <div className="text-white">This test has no questions.</div>;
+  
+  // Show loading screen while data is being loaded
+  if (isDataLoading || testQuestions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold mb-4">Loading Test...</h1>
+          <p className="mb-6">Preparing your questions...</p>
+        </div>
+      </div>
+    );
+  }
   // If the user left the page, show termination overlay instead of rendering test
 
   const handleAnswerSelect = (questionId: string, optionIndex: number) => {
