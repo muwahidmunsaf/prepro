@@ -115,14 +115,17 @@ const TestScreen: React.FC = () => {
     // Calculate total questions needed from all subjects
     const totalSubjectQuestions = sortedSubjects.reduce((sum, subject) => sum + subject.questionCount, 0);
     
-    // If total subject questions is less than test total, use test total instead
-    const targetTotalQuestions = Math.max(totalSubjectQuestions, test.totalQuestions);
+    // Use the test's configured total questions, but don't exceed what's available
+    const targetTotalQuestions = Math.min(test.totalQuestions, totalSubjectQuestions);
     
     debug.test(`Test ${testId} question distribution:`, {
       testTotalQuestions: test.totalQuestions,
       totalSubjectQuestions,
       targetTotalQuestions,
-      subjects: sortedSubjects.map(s => ({ name: s.subjectName, configured: s.questionCount }))
+      subjects: sortedSubjects.map(s => ({ name: s.subjectName, configured: s.questionCount })),
+      note: totalSubjectQuestions > test.totalQuestions ? 
+        `⚠️ Subject total (${totalSubjectQuestions}) > Test total (${test.totalQuestions}). Using test total.` :
+        `✅ Using ${targetTotalQuestions} questions as configured.`
     });
     
     for (const subject of sortedSubjects) {
@@ -182,20 +185,26 @@ const TestScreen: React.FC = () => {
       orderedQuestions = [...orderedQuestions, ...shuffledRemaining.slice(0, additionalNeeded)];
     }
     
+    // Remove duplicate questions by ID
+    const uniqueQuestions = orderedQuestions.filter((question, index, self) => 
+      index === self.findIndex(q => q.id === question.id)
+    );
+    
     // Ensure we don't exceed the target total
-    orderedQuestions = orderedQuestions.slice(0, targetTotalQuestions);
+    const finalQuestions = uniqueQuestions.slice(0, targetTotalQuestions);
     
     debug.test(`Final question selection for test ${testId}:`, {
-      totalSelected: orderedQuestions.length,
+      totalSelected: finalQuestions.length,
       targetTotal: targetTotalQuestions,
+      duplicatesRemoved: orderedQuestions.length - uniqueQuestions.length,
       subjectBreakdown: sortedSubjects.map(s => ({
         subject: s.subjectName,
-        selected: orderedQuestions.filter(q => q.subject === s.subjectName).length
+        selected: finalQuestions.filter(q => q.subject === s.subjectName).length
       }))
     });
     
-    setStableQuestions(orderedQuestions);
-    return orderedQuestions;
+    setStableQuestions(finalQuestions);
+    return finalQuestions;
   }, [state.questions, state.testSubjects, testId, test, stableQuestions, state.currentUser]);
 
   // Smart rotation is now handled in useMemo above for better performance
@@ -458,7 +467,7 @@ const TestScreen: React.FC = () => {
 
             <div className="space-y-8">
             {currentQuestions.map((q, index) => (
-                <div key={q.id} className="bg-slate-50 dark:bg-slate-700/50 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600">
+                <div key={`${q.id}-${startIndex + index}`} className="bg-slate-50 dark:bg-slate-700/50 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-600">
                 <div className="flex items-start gap-3 mb-4">
                     <span className="bg-indigo-500 text-white text-sm font-bold px-3 py-1 rounded-full flex-shrink-0">
                         {startIndex + index + 1}
@@ -473,7 +482,7 @@ const TestScreen: React.FC = () => {
                     const isSelected = userAnswer?.selectedAnswer === optIndex;
                     return (
                         <button
-                        key={optIndex}
+                        key={`${q.id}-option-${optIndex}`}
                         onClick={() => handleAnswerSelect(q.id, optIndex)}
                         className={`w-full text-left p-4 border-2 rounded-xl transition-all duration-200 ${
                             isSelected
