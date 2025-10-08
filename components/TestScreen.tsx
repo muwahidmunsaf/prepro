@@ -58,18 +58,22 @@ const TestScreen: React.FC = () => {
     const loadTestData = async () => {
       if (testId) {
         try {
-          // Load test subjects
-          if (!state.testSubjects || state.testSubjects.length === 0) {
-            const subjects = await supabaseService.fetchTestSubjects(testId);
-            dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
-          }
+          debug.questions(`🔄 Starting to load data for test ${testId}`);
           
-          // Load questions for this test
-          const questions = await supabaseService.fetchQuestionsByTestId(testId);
-          debug.questions(`🔄 Loaded ${questions.length} questions for test ${testId}`);
+          // Always load fresh data to ensure consistency
+          const [subjects, questions] = await Promise.all([
+            supabaseService.fetchTestSubjects(testId),
+            supabaseService.fetchQuestionsByTestId(testId)
+          ]);
           
-          // Update global state with questions
+          debug.questions(`🔄 Loaded ${questions.length} questions and ${subjects.length} subjects for test ${testId}`);
+          
+          // Update global state with fresh data
+          dispatch({ type: 'SET_TEST_SUBJECTS', payload: subjects } as any);
           dispatch({ type: 'BULK_ADD_QUESTIONS', payload: questions } as any);
+          
+          // Wait a bit to ensure state updates are processed
+          await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (error) {
           debug.error('Failed to load test data:', error);
@@ -219,6 +223,13 @@ const TestScreen: React.FC = () => {
         selected: finalQuestions.filter(q => q.subject === s.subjectName).length
       }))
     });
+    
+    // Final validation - ensure we have exactly the right number of questions
+    if (finalQuestions.length !== test.totalQuestions) {
+      debug.error(`Question count mismatch! Expected ${test.totalQuestions}, got ${finalQuestions.length}`);
+      // Don't return questions if count is wrong - let loading screen handle it
+      return [];
+    }
     
     setStableQuestions(finalQuestions);
     return finalQuestions;
@@ -380,14 +391,33 @@ const TestScreen: React.FC = () => {
 
   if (!test) return <div className="text-white">Test not found.</div>;
   
-  // Show loading screen while data is being loaded
-  if (isDataLoading || testQuestions.length === 0) {
+  // Show loading screen while data is being loaded - be more aggressive about this
+  const isDataReady = !isDataLoading && test && testQuestions.length > 0 && testQuestions.length === test.totalQuestions;
+  
+  // Debug logging for question count issues
+  debug.questions(`Data readiness check:`, {
+    isDataLoading,
+    hasTest: !!test,
+    testQuestionsLength: testQuestions.length,
+    testTotalQuestions: test?.totalQuestions,
+    isDataReady,
+    mismatch: testQuestions.length !== test?.totalQuestions
+  });
+  
+  if (!isDataReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <h1 className="text-2xl font-bold mb-4">Loading Test...</h1>
           <p className="mb-6">Preparing your questions...</p>
+          <div className="text-sm text-gray-300">
+            {isDataLoading && "Loading data..."}
+            {!isDataLoading && testQuestions.length === 0 && "No questions loaded yet..."}
+            {!isDataLoading && testQuestions.length > 0 && testQuestions.length !== test?.totalQuestions && 
+              `Loaded ${testQuestions.length} questions, expecting ${test?.totalQuestions}...`}
+            {!isDataLoading && test && `Test configured for ${test.totalQuestions} questions`}
+          </div>
         </div>
       </div>
     );
